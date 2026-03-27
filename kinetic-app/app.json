@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "kinetic-app",
+    "slug": "kinetic-app",
+    "version": "1.0.0",
+    "scheme": "kinetic",
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
