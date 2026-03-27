@@ -1,0 +1,15 @@
+# Python
+kinetic-api/venv/
+kinetic-api/__pycache__/
+kinetic-api/*.pyc
+kinetic-api/.env
+
+# Node
+kinetic-app/node_modules/
+kinetic-app/.expo/
+kinetic-app/dist/
+kinetic-app/.env
+
+# General
+.DS_Store
+*.log
