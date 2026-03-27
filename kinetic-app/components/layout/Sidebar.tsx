@@ -1,7 +1,6 @@
 ﻿import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { colors } from "../../theme/colors";
-import { supabase } from "../../lib/supabase";
 
 const navItems = [
   { label: "DASHBOARD",       href: "/(app)/dashboard",       icon: "◈" },
@@ -9,16 +8,12 @@ const navItems = [
   { label: "WORKOUT BUILDER", href: "/(app)/workout-builder", icon: "◇" },
   { label: "PROGRESS",        href: "/(app)/progress",        icon: "▲" },
   { label: "AI ADVISOR",      href: "/(app)/ai-advisor",      icon: "◎" },
+  { label: "PROFILE",         href: "/(app)/profile",         icon: "◯" },
 ];
 
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.replace("/(auth)/login");
-  }
 
   return (
     <View style={styles.sidebar}>
@@ -50,9 +45,6 @@ export default function Sidebar() {
 
       <TouchableOpacity style={styles.startBtn} onPress={() => router.push('/(app)/workout-builder')}>
         <Text style={styles.startBtnText}>&#x25B6;  START BUILDER</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Text style={styles.logoutBtnText}>SIGN OUT</Text>
       </TouchableOpacity>
     </View>
   );
@@ -100,14 +92,5 @@ const styles = StyleSheet.create({
   startBtnText: {
     color: colors.onPrimaryContainer,
     fontWeight: "900", fontSize: 11, letterSpacing: 1,
-  },
-  logoutBtn: {
-    marginHorizontal: 16, marginTop: 10,
-    paddingVertical: 12, borderRadius: 50, alignItems: "center",
-    backgroundColor: colors.surfaceContainer,
-  },
-  logoutBtnText: {
-    color: colors.onSurfaceVariant,
-    fontWeight: "700", fontSize: 10, letterSpacing: 1.5,
   },
 });

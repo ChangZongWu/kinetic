@@ -13,8 +13,10 @@ import { supabase } from '../../lib/supabase';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const DAY_LABELS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+const DAYS     = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_LBLS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+// ── Types ──────────────────────────────────────────────────────────────────────
 
 interface PlanSession {
   id: string;
@@ -40,6 +42,19 @@ interface Profile {
   goal?: string;
 }
 
+interface LogSet {
+  reps: number | null;
+  weight_kg: number | null;
+}
+
+interface WorkoutLog {
+  id: string;
+  logged_at: string;
+  log_sets: LogSet[];
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
 async function getAuthHeaders() {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -47,17 +62,105 @@ async function getAuthHeaders() {
 }
 
 function getTodayDay(): string {
-  const d = new Date().getDay(); // 0=Sun,1=Mon,...,6=Sat
-  const map = [6, 0, 1, 2, 3, 4, 5]; // Sunday maps to index 6 (Sun), Monday to 0 (Mon)
+  const d = new Date().getDay();
+  const map = [6, 0, 1, 2, 3, 4, 5];
   return DAYS[map[d]];
 }
 
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function calcStreak(logs: WorkoutLog[]): number {
+  const dateSet = new Set(logs.map(l => l.logged_at.slice(0, 10)));
+  let streak = 0;
+  const cursor = new Date();
+  cursor.setHours(0, 0, 0, 0);
+  // If today has no log, start streak check from yesterday
+  if (!dateSet.has(localDateStr(cursor))) cursor.setDate(cursor.getDate() - 1);
+  while (dateSet.has(localDateStr(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function getWeeklyVolumes(logs: WorkoutLog[]): number[] {
+  // Returns array [Mon, Tue, Wed, Thu, Fri, Sat, Sun] volumes for the current week
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun
+  const diffToMon = dow === 0 ? 6 : dow - 1;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - diffToMon);
+  monday.setHours(0, 0, 0, 0);
+
+  const volumes = [0, 0, 0, 0, 0, 0, 0];
+  for (const log of logs) {
+    const d = new Date(log.logged_at);
+    const dayIdx = (d.getDay() + 6) % 7; // Mon=0 ... Sun=6
+    if (d >= monday) {
+      const vol = (log.log_sets ?? []).reduce(
+        (s, set) => s + (set.reps ?? 0) * (set.weight_kg ?? 0), 0
+      );
+      volumes[dayIdx] += vol;
+    }
+  }
+  return volumes;
+}
+
+// ── Weekly bar chart ───────────────────────────────────────────────────────────
+
+const CHART_H = 72;
+
+function WeeklyChart({ volumes, todayIdx }: { volumes: number[]; todayIdx: number }) {
+  const max = Math.max(...volumes, 1);
+  return (
+    <View style={cs.row}>
+      {volumes.map((vol, i) => {
+        const barH = vol > 0 ? Math.max((vol / max) * CHART_H, 8) : 0;
+        const isToday = i === todayIdx;
+        return (
+          <View key={i} style={cs.col}>
+            <View style={[cs.barBg, { height: CHART_H }]}>
+              {barH > 0 && (
+                <View style={[
+                  cs.barFill, { height: barH },
+                  isToday ? cs.barActive : cs.barDim,
+                ]} />
+              )}
+            </View>
+            <Text style={[cs.lbl, isToday && cs.lblActive]}>{DAY_LBLS[i]}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+const cs = StyleSheet.create({
+  row:   { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
+  col:   { flex: 1, alignItems: 'center', gap: 6 },
+  barBg: {
+    width: '100%', backgroundColor: colors.surfaceContainerHigh,
+    borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden',
+  },
+  barFill:  { width: '100%', borderRadius: 6 },
+  barActive:{ backgroundColor: colors.primaryContainer },
+  barDim:   { backgroundColor: colors.surfaceContainerHighest },
+  lbl:      { fontSize: 7, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.5 },
+  lblActive:{ color: colors.primaryContainer },
+});
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
 export default function Dashboard() {
   const router = useRouter();
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plans,   setPlans]   = useState<Plan[]>([]);
   const [profile, setProfile] = useState<Profile>({});
+  const [logs,    setLogs]    = useState<WorkoutLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const todayDay = getTodayDay();
+
+  const todayDay   = getTodayDay();
   const todayIndex = DAYS.indexOf(todayDay);
 
   useFocusEffect(
@@ -70,22 +173,24 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const headers = await getAuthHeaders();
-      const [plansRes, profileRes] = await Promise.all([
-        fetch(`${API_URL}/plans`, { headers }),
+      const [plansRes, profileRes, logsRes] = await Promise.all([
+        fetch(`${API_URL}/plans`,   { headers }),
         fetch(`${API_URL}/profile`, { headers }),
+        fetch(`${API_URL}/logs`,    { headers }),
       ]);
-      if (plansRes.ok) setPlans(await plansRes.json());
+      if (plansRes.ok)   setPlans(await plansRes.json());
       if (profileRes.ok) setProfile(await profileRes.json());
+      if (logsRes.ok)    setLogs(await logsRes.json());
     } finally {
       setLoading(false);
     }
   }
 
-  // Use the first plan as the "active" plan for dashboard
-  const activePlan = plans[0] ?? null;
-
-  const totalExercises = plans.reduce((sum, p) => sum + p.plan_sessions.length, 0);
+  const activePlan     = plans[0] ?? null;
+  const totalExercises = plans.reduce((s, p) => s + p.plan_sessions.length, 0);
   const todayExercises = activePlan?.plan_sessions.filter(s => s.day_of_week === todayDay) ?? [];
+  const streak         = calcStreak(logs);
+  const weeklyVols     = getWeeklyVolumes(logs);
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -131,9 +236,22 @@ export default function Dashboard() {
           <Text style={styles.statLabel}>EXERCISES</Text>
         </View>
         <View style={styles.statCard}>
+          <Text style={styles.statNum}>{streak}</Text>
+          <Text style={styles.statLabel}>STREAK</Text>
+        </View>
+        <View style={styles.statCard}>
           <Text style={styles.statNum}>{todayExercises.length}</Text>
           <Text style={styles.statLabel}>TODAY</Text>
         </View>
+      </View>
+
+      {/* Weekly volume chart */}
+      <Text style={styles.sectionLabel}>WEEKLY VOLUME</Text>
+      <View style={styles.chartCard}>
+        <WeeklyChart volumes={weeklyVols} todayIdx={todayIndex} />
+        {weeklyVols.every(v => v === 0) && (
+          <Text style={styles.chartEmpty}>Log workouts to see your weekly volume</Text>
+        )}
       </View>
 
       {/* Weekly strip */}
@@ -142,17 +260,16 @@ export default function Dashboard() {
           <Text style={styles.sectionLabel}>THIS WEEK — {activePlan.name.toUpperCase()}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.weekStrip} contentContainerStyle={styles.weekStripContent}>
             {DAYS.map((day, i) => {
-              const isToday = day === todayDay;
-              const sessions = activePlan.plan_sessions.filter(s => s.day_of_week === day);
+              const isToday   = day === todayDay;
+              const sessions  = activePlan.plan_sessions.filter(s => s.day_of_week === day);
               return (
                 <View key={day} style={[styles.dayCard, isToday && styles.dayCardToday]}>
-                  <Text style={[styles.dayCardLabel, isToday && styles.dayCardLabelToday]}>{DAY_LABELS[i]}</Text>
+                  <Text style={[styles.dayCardLabel, isToday && styles.dayCardLabelToday]}>{DAY_LBLS[i]}</Text>
                   <View style={styles.dayCardDot}>
-                    {sessions.length > 0 ? (
-                      <Text style={[styles.dayCardCount, isToday && styles.dayCardCountToday]}>{sessions.length}</Text>
-                    ) : (
-                      <Text style={styles.dayCardRest}>—</Text>
-                    )}
+                    {sessions.length > 0
+                      ? <Text style={[styles.dayCardCount, isToday && styles.dayCardCountToday]}>{sessions.length}</Text>
+                      : <Text style={styles.dayCardRest}>—</Text>
+                    }
                   </View>
                   {isToday && <View style={styles.todayIndicator} />}
                 </View>
@@ -162,31 +279,26 @@ export default function Dashboard() {
         </>
       )}
 
-      {/* Today's session hero */}
+      {/* Today's session */}
       <Text style={styles.sectionLabel}>TODAY'S SESSION</Text>
       {todayExercises.length > 0 ? (
         <View style={styles.todayCard}>
           <View style={styles.todayCardHeader}>
-            <Text style={styles.todayCardDay}>{DAY_LABELS[todayIndex]}</Text>
+            <Text style={styles.todayCardDay}>{DAY_LBLS[todayIndex]}</Text>
             <Text style={styles.todayCardCount}>{todayExercises.length} EXERCISES</Text>
           </View>
           {todayExercises.map((session, idx) => (
-            <View key={session.id} style={[styles.todayExerciseRow, idx < todayExercises.length - 1 && styles.todayExerciseRowBorder]}>
-              <View style={styles.todayExerciseLeft}>
-                <Text style={styles.todayExerciseName}>{session.exercises.name}</Text>
-                <Text style={styles.todayExerciseMeta}>
+            <View key={session.id} style={[styles.todayExRow, idx < todayExercises.length - 1 && styles.todayExRowBorder]}>
+              <View style={styles.todayExLeft}>
+                <Text style={styles.todayExName}>{session.exercises.name}</Text>
+                <Text style={styles.todayExMeta}>
                   {session.exercises.muscle_groups?.name} · {session.exercises.equipment}
                 </Text>
               </View>
-              <View style={styles.todayExerciseRight}>
-                <Text style={styles.todaySets}>{session.exercises.sets_suggestion}×{session.exercises.reps_suggestion}</Text>
-              </View>
+              <Text style={styles.todaySets}>{session.exercises.sets_suggestion}×{session.exercises.reps_suggestion}</Text>
             </View>
           ))}
-          <TouchableOpacity
-            style={styles.startSessionBtn}
-            onPress={() => router.push('/(app)/workout-builder')}
-          >
+          <TouchableOpacity style={styles.startSessionBtn} onPress={() => router.push('/(app)/workout-builder')}>
             <Text style={styles.startSessionBtnText}>▶  VIEW IN BUILDER</Text>
           </TouchableOpacity>
         </View>
@@ -194,16 +306,13 @@ export default function Dashboard() {
         <View style={styles.restCard}>
           <Text style={styles.restCardTitle}>REST DAY</Text>
           <Text style={styles.restCardSubtext}>Recovery is part of performance.</Text>
-          <TouchableOpacity
-            style={styles.buildPlanBtn}
-            onPress={() => router.push('/(app)/workout-builder')}
-          >
+          <TouchableOpacity style={styles.buildPlanBtn} onPress={() => router.push('/(app)/workout-builder')}>
             <Text style={styles.buildPlanBtnText}>OPEN WORKOUT BUILDER</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* All plans quick view */}
+      {/* All plans */}
       {plans.length > 0 && (
         <>
           <Text style={styles.sectionLabel}>YOUR PLANS</Text>
@@ -216,9 +325,7 @@ export default function Dashboard() {
             >
               <View style={styles.planRowLeft}>
                 <Text style={styles.planRowName}>{plan.name}</Text>
-                {plan.goal && (
-                  <Text style={styles.planRowGoal}>{plan.goal.replace('_', ' ').toUpperCase()}</Text>
-                )}
+                {plan.goal && <Text style={styles.planRowGoal}>{plan.goal.replace('_', ' ').toUpperCase()}</Text>}
               </View>
               <View style={styles.planRowRight}>
                 <Text style={styles.planRowCount}>{plan.plan_sessions.length}</Text>
@@ -234,10 +341,7 @@ export default function Dashboard() {
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateTitle}>NO PLANS YET</Text>
           <Text style={styles.emptyStateText}>Build your first workout plan to get started</Text>
-          <TouchableOpacity
-            style={styles.startSessionBtn}
-            onPress={() => router.push('/(app)/workout-builder')}
-          >
+          <TouchableOpacity style={styles.startSessionBtn} onPress={() => router.push('/(app)/workout-builder')}>
             <Text style={styles.startSessionBtnText}>CREATE A PLAN</Text>
           </TouchableOpacity>
         </View>
@@ -247,12 +351,13 @@ export default function Dashboard() {
   );
 }
 
+// ── Styles ─────────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   root:    { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 24 },
   center:  { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  // Greeting
   greetingRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 },
   greetingLabel: { fontSize: 9, color: colors.onSurfaceVariant, letterSpacing: 3, marginBottom: 4 },
   greetingName: { fontSize: 32, fontWeight: '900', color: colors.onSurface, letterSpacing: -1 },
@@ -262,44 +367,56 @@ const styles = StyleSheet.create({
   },
   goalBadgeText: { color: colors.primaryContainer, fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
 
-  // Stats
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 28 },
+  statsRow: { flexDirection: 'row', gap: 8, marginBottom: 28 },
   statCard: {
-    flex: 1, backgroundColor: colors.surfaceContainer, borderRadius: 16, padding: 16, alignItems: 'center', gap: 4,
+    flex: 1, backgroundColor: colors.surfaceContainer,
+    borderRadius: 14, padding: 12, alignItems: 'center', gap: 4,
   },
-  statNum: { fontSize: 28, fontWeight: '900', color: colors.primaryContainer },
-  statLabel: { fontSize: 8, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 2 },
+  statNum:   { fontSize: 22, fontWeight: '900', color: colors.primaryContainer },
+  statLabel: { fontSize: 7, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 1.5 },
 
-  // Section label
   sectionLabel: { fontSize: 9, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 3, marginBottom: 12 },
+
+  // Chart
+  chartCard: {
+    backgroundColor: colors.surfaceContainer, borderRadius: 20,
+    padding: 16, paddingTop: 20, marginBottom: 28,
+  },
+  chartEmpty: { fontSize: 11, color: colors.onSurfaceVariant, textAlign: 'center', marginTop: 12, paddingBottom: 4 },
 
   // Weekly strip
   weekStrip: { flexGrow: 0, marginBottom: 28, marginHorizontal: -20 },
   weekStripContent: { paddingHorizontal: 20, gap: 8 },
   dayCard: {
-    width: 56, paddingVertical: 12, borderRadius: 14, backgroundColor: colors.surfaceContainer,
-    alignItems: 'center', gap: 8, position: 'relative',
+    width: 56, paddingVertical: 12, borderRadius: 14,
+    backgroundColor: colors.surfaceContainer, alignItems: 'center', gap: 8, position: 'relative',
   },
   dayCardToday: { backgroundColor: colors.surfaceContainerHigh, borderWidth: 1, borderColor: colors.primaryContainer },
   dayCardLabel: { fontSize: 8, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1 },
   dayCardLabelToday: { color: colors.primaryContainer },
-  dayCardDot: { width: 28, height: 28, borderRadius: 50, backgroundColor: colors.surfaceContainerHighest, alignItems: 'center', justifyContent: 'center' },
+  dayCardDot: {
+    width: 28, height: 28, borderRadius: 50,
+    backgroundColor: colors.surfaceContainerHighest, alignItems: 'center', justifyContent: 'center',
+  },
   dayCardCount: { fontSize: 13, fontWeight: '900', color: colors.onSurface },
   dayCardCountToday: { color: colors.primaryContainer },
   dayCardRest: { fontSize: 11, color: colors.outlineVariant },
-  todayIndicator: { position: 'absolute', bottom: 0, left: '50%', width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primaryContainer, marginLeft: -2 },
+  todayIndicator: {
+    position: 'absolute', bottom: 0, left: '50%',
+    width: 4, height: 4, borderRadius: 2,
+    backgroundColor: colors.primaryContainer, marginLeft: -2,
+  },
 
   // Today card
   todayCard: { backgroundColor: colors.surfaceContainer, borderRadius: 20, padding: 20, marginBottom: 28 },
   todayCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   todayCardDay: { fontSize: 22, fontWeight: '900', color: colors.primaryContainer },
   todayCardCount: { fontSize: 10, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 1.5 },
-  todayExerciseRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  todayExerciseRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.outlineVariant + '33' },
-  todayExerciseLeft: { flex: 1, gap: 2 },
-  todayExerciseName: { fontSize: 14, fontWeight: '700', color: colors.onSurface },
-  todayExerciseMeta: { fontSize: 10, color: colors.onSurfaceVariant },
-  todayExerciseRight: { paddingLeft: 12 },
+  todayExRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  todayExRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.outlineVariant + '33' },
+  todayExLeft: { flex: 1, gap: 2 },
+  todayExName: { fontSize: 14, fontWeight: '700', color: colors.onSurface },
+  todayExMeta: { fontSize: 10, color: colors.onSurfaceVariant },
   todaySets: { fontSize: 13, fontWeight: '800', color: colors.tertiary },
   startSessionBtn: {
     backgroundColor: colors.primaryContainer, borderRadius: 50,
@@ -307,7 +424,6 @@ const styles = StyleSheet.create({
   },
   startSessionBtnText: { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: 11, letterSpacing: 1.5 },
 
-  // Rest card
   restCard: {
     backgroundColor: colors.surfaceContainer, borderRadius: 20, padding: 24,
     alignItems: 'center', gap: 8, marginBottom: 28,
@@ -315,12 +431,10 @@ const styles = StyleSheet.create({
   restCardTitle: { fontSize: 28, fontWeight: '900', color: colors.onSurface },
   restCardSubtext: { fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8 },
   buildPlanBtn: {
-    backgroundColor: colors.surfaceContainerHigh, borderRadius: 50,
-    paddingHorizontal: 24, paddingVertical: 12,
+    backgroundColor: colors.surfaceContainerHigh, borderRadius: 50, paddingHorizontal: 24, paddingVertical: 12,
   },
   buildPlanBtnText: { color: colors.onSurface, fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
 
-  // Plan rows
   planRow: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceContainer,
     borderRadius: 16, padding: 16, marginBottom: 10,
@@ -333,7 +447,6 @@ const styles = StyleSheet.create({
   planRowCountLabel: { fontSize: 8, color: colors.onSurfaceVariant, letterSpacing: 1 },
   planRowChevron: { fontSize: 24, color: colors.onSurfaceVariant },
 
-  // Empty state
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: 10 },
   emptyStateTitle: { fontSize: 22, fontWeight: '900', color: colors.onSurface },
   emptyStateText: { fontSize: 12, color: colors.onSurfaceVariant, textAlign: 'center', marginBottom: 8 },

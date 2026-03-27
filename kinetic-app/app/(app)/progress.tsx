@@ -61,6 +61,65 @@ interface Plan {
   plan_sessions: PlanSession[];
 }
 
+// ── Weekly chart helpers ───────────────────────────────────────────────────────
+
+const CHART_H = 64;
+
+function getVolumeLast6Weeks(logs: WorkoutLog[]): { label: string; volume: number }[] {
+  const now = new Date();
+  const dow = now.getDay();
+  const diffToMon = dow === 0 ? 6 : dow - 1;
+
+  return Array.from({ length: 6 }, (_, i) => {
+    const weeksAgo = 5 - i;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - diffToMon - weeksAgo * 7);
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 7);
+
+    const volume = logs
+      .filter(l => { const d = new Date(l.logged_at); return d >= monday && d < sunday; })
+      .reduce((sum, l) =>
+        sum + (l.log_sets ?? []).reduce((s, set) => s + (set.reps ?? 0) * (set.weight_kg ?? 0), 0), 0
+      );
+    return { label: weeksAgo === 0 ? 'NOW' : `W-${weeksAgo}`, volume };
+  });
+}
+
+function VolumeChart({ weeks }: { weeks: { label: string; volume: number }[] }) {
+  const max = Math.max(...weeks.map(w => w.volume), 1);
+  return (
+    <View style={vc.row}>
+      {weeks.map((w, i) => {
+        const barH = w.volume > 0 ? Math.max((w.volume / max) * CHART_H, 8) : 0;
+        const isNow = i === weeks.length - 1;
+        return (
+          <View key={i} style={vc.col}>
+            <View style={[vc.barBg, { height: CHART_H }]}>
+              {barH > 0 && (
+                <View style={[vc.barFill, { height: barH }, isNow ? vc.barNow : vc.barPast]} />
+              )}
+            </View>
+            <Text style={[vc.lbl, isNow && vc.lblNow]}>{w.label}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+const vc = StyleSheet.create({
+  row:     { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
+  col:     { flex: 1, alignItems: 'center', gap: 6 },
+  barBg:   { width: '100%', backgroundColor: colors.surfaceContainerHigh, borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden' },
+  barFill: { width: '100%', borderRadius: 6 },
+  barNow:  { backgroundColor: colors.primaryContainer },
+  barPast: { backgroundColor: colors.surfaceContainerHighest },
+  lbl:     { fontSize: 7, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.5 },
+  lblNow:  { color: colors.primaryContainer },
+});
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 async function getAuthHeaders() {
@@ -324,6 +383,20 @@ export default function Progress() {
           </View>
         </View>
 
+        {/* Volume by week chart */}
+        {logs.length > 0 && (() => {
+          const weeks = getVolumeLast6Weeks(logs);
+          const anyVolume = weeks.some(w => w.volume > 0);
+          return anyVolume ? (
+            <>
+              <Text style={styles.sectionLabel}>VOLUME BY WEEK</Text>
+              <View style={styles.chartCard}>
+                <VolumeChart weeks={weeks} />
+              </View>
+            </>
+          ) : null;
+        })()}
+
         {/* History */}
         <Text style={styles.sectionLabel}>RECENT WORKOUTS</Text>
 
@@ -502,6 +575,12 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 9, fontWeight: '800', color: colors.onSurfaceVariant,
     letterSpacing: 3, marginBottom: 12,
+  },
+
+  // Chart
+  chartCard: {
+    backgroundColor: colors.surfaceContainer,
+    borderRadius: 20, padding: 16, paddingTop: 20, marginBottom: 28,
   },
 
   // Empty
