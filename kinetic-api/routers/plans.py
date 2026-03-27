@@ -33,7 +33,7 @@ class UpdateSessionBody(BaseModel):
 def list_plans(user=Depends(get_current_user)):
     result = (
         supabase.table("workout_plans")
-        .select("*, plan_sessions(*, exercises(name, difficulty, equipment, sets_suggestion, reps_suggestion, muscle_groups(name)))")
+        .select("*, plan_sessions(*, exercises(id, name, difficulty, equipment, sets_suggestion, reps_suggestion, muscle_groups(name)))")
         .eq("user_id", user["id"])
         .order("created_at", desc=True)
         .execute()

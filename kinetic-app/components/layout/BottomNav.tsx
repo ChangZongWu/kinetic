@@ -3,10 +3,11 @@ import { useRouter, usePathname } from "expo-router";
 import { colors } from "../../theme/colors";
 
 const navItems = [
-  { label: "Home",    href: "/(app)/dashboard",       icon: "◈" },
-  { label: "Muscles", href: "/(app)/muscle-selector", icon: "◉" },
-  { label: "Workout", href: "/(app)/workout-builder", icon: "◇" },
-  { label: "AI",      href: "/(app)/ai-advisor",      icon: "◎" },
+  { label: "Home",     href: "/(app)/dashboard",       icon: "◈" },
+  { label: "Muscles",  href: "/(app)/muscle-selector", icon: "◉" },
+  { label: "Workout",  href: "/(app)/workout-builder", icon: "◇" },
+  { label: "Progress", href: "/(app)/progress",        icon: "▲" },
+  { label: "AI",       href: "/(app)/ai-advisor",      icon: "◎" },
 ];
 
 export default function BottomNav() {
