@@ -52,9 +52,10 @@ export default function ProfileScreen() {
   const [age,           setAge]           = useState('');
   const [weightKg,      setWeightKg]      = useState('');
   const [heightCm,      setHeightCm]      = useState('');
-  const [goal,          setGoal]          = useState('');
-  const [units,         setUnits]         = useState('metric');
-  const [fitnessLevel,  setFitnessLevel]  = useState('');
+  const [goal,            setGoal]            = useState('');
+  const [units,           setUnits]           = useState('metric');
+  const [fitnessLevel,    setFitnessLevel]    = useState('');
+  const [defaultRest,     setDefaultRest]     = useState(90);
 
   useFocusEffect(
     useCallback(() => {
@@ -78,9 +79,10 @@ export default function ProfileScreen() {
         setAge(      p.age        ? String(p.age)        : '');
         setWeightKg( p.weight_kg  ? String(p.weight_kg)  : '');
         setHeightCm( p.height_cm  ? String(p.height_cm)  : '');
-        setGoal(        p.goal          ?? '');
-        setUnits(       p.units         ?? 'metric');
-        setFitnessLevel(p.fitness_level ?? '');
+        setGoal(        p.goal             ?? '');
+        setUnits(       p.units            ?? 'metric');
+        setFitnessLevel(p.fitness_level    ?? '');
+        setDefaultRest( p.default_rest_timer ?? 90);
       }
       if (logsRes.ok) {
         const logs: any[] = await logsRes.json();
@@ -109,6 +111,7 @@ export default function ProfileScreen() {
       if (goal)                                 body.goal          = goal;
       if (units)                                body.units         = units;
       if (fitnessLevel)                         body.fitness_level = fitnessLevel;
+      if (defaultRest > 0)                      body.default_rest_timer = defaultRest;
 
       const res = await fetch(`${API_URL}/profile`, {
         method: 'PATCH',
@@ -239,6 +242,25 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Rest Timer */}
+      <Text style={s.sectionLabel}>DEFAULT REST TIMER</Text>
+      <View style={s.card}>
+        <Text style={s.restTimerDesc}>Auto-starts after each completed set</Text>
+        <View style={s.restTimerRow}>
+          {[30, 60, 90, 120, 180].map(sec => (
+            <TouchableOpacity
+              key={sec}
+              style={[s.restChip, defaultRest === sec && s.chipOn]}
+              onPress={() => setDefaultRest(sec)}
+            >
+              <Text style={[s.chipTxt, defaultRest === sec && s.chipTxtOn]}>
+                {sec >= 60 ? `${sec / 60}m` : `${sec}s`}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
       {/* Save */}
       <TouchableOpacity style={[s.saveBtn, saving && s.saveBtnOff]} onPress={save} disabled={saving}>
         {saving
@@ -346,7 +368,14 @@ const s = StyleSheet.create({
   },
 
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  unitRow:  { flexDirection: 'row', gap: 10 },
+  unitRow:      { flexDirection: 'row', gap: 10 },
+  restTimerDesc:{ fontSize: 11, color: colors.onSurfaceVariant, marginBottom: 12 },
+  restTimerRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  restChip: {
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 50,
+    backgroundColor: colors.surfaceContainerHigh,
+    borderWidth: 1, borderColor: colors.outlineVariant,
+  },
 
   chip: {
     backgroundColor: colors.surfaceContainerHigh,

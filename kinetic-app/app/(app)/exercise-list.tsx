@@ -59,6 +59,23 @@ async function fetchExercises(muscleId: string): Promise<Exercise[]> {
   return res.json();
 }
 
+const FORM_CUES: Record<string, string[]> = {
+  'Bench Press':          ['Retract shoulder blades and keep them pinned', 'Bar path: lower chest to mid-chest', 'Drive feet into floor for leg drive'],
+  'Barbell Bench Press':  ['Retract shoulder blades and keep them pinned', 'Bar path: lower chest to mid-chest', 'Drive feet into floor for leg drive'],
+  'Squat':                ['Brace core before descending', 'Keep knees tracking over toes', 'Drive through mid-foot, not heels'],
+  'Back Squat':           ['Brace core before descending', 'Keep knees tracking over toes', 'Drive through mid-foot, not heels'],
+  'Deadlift':             ['Hip hinge, not a squat — push the floor away', 'Bar stays over mid-foot throughout', 'Lock out hips and glutes at the top'],
+  'Romanian Deadlift':    ['Hinge at hips, soft knee bend', 'Feel hamstring stretch at bottom', 'Keep bar close to legs throughout'],
+  'Overhead Press':       ['Squeeze glutes and brace core', 'Push head through at lockout', 'Elbows slightly forward, not flared'],
+  'Pull Up':              ['Start from dead hang, depress scapula first', 'Lead with chest to the bar', 'Control the negative for 2 seconds'],
+  'Lat Pulldown':         ['Lean back slightly, pull to upper chest', 'Drive elbows down and back', 'Squeeze lats at bottom for 1 second'],
+  'Row':                  ['Brace core, neutral spine', 'Drive elbows past your torso', 'Squeeze shoulder blades together'],
+  'Hip Thrust':           ['Chin to chest throughout to keep neutral spine', 'Drive through heels, not toes', 'Full glute squeeze at the top'],
+  'Leg Press':            ['Feet hip-width, don\'t lock knees at top', 'Lower until 90° knee angle', 'Keep lower back flat on pad'],
+  'Dumbbell Curl':        ['Keep elbows pinned at sides', 'Supinate wrist at top', 'Lower slowly — 3 second negative'],
+  'Tricep Pushdown':      ['Elbows fixed at sides, only forearms move', 'Fully extend at bottom, squeeze triceps', 'Keep wrists neutral'],
+};
+
 const EQUIPMENT_OPTIONS = ['barbell', 'dumbbell', 'cable', 'bodyweight', 'machine'];
 const DIFFICULTY_OPTIONS = ['beginner', 'intermediate', 'advanced'];
 
@@ -428,6 +445,19 @@ export default function ExerciseList() {
                   <Text style={styles.modalMuscle}>{selected.muscle_groups?.name?.toUpperCase()}</Text>
                   <Text style={styles.modalDesc}>{selected.description}</Text>
 
+                  {/* Form cues */}
+                  {FORM_CUES[selected.name] && (
+                    <View style={styles.formCuesBox}>
+                      <Text style={styles.formCuesTitle}>FORM CUES</Text>
+                      {FORM_CUES[selected.name].map((cue, i) => (
+                        <View key={i} style={styles.formCueRow}>
+                          <Text style={styles.formCueDot}>▸</Text>
+                          <Text style={styles.formCueText}>{cue}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
                   {/* Stats grid */}
                   <View style={styles.statsGrid}>
                     <View style={styles.statBox}>
@@ -569,6 +599,12 @@ const styles = StyleSheet.create({
   modalTitle:  { fontSize: 28, fontWeight: '900', color: colors.onSurface, letterSpacing: -0.5, marginBottom: 4 },
   modalMuscle: { fontSize: 9, fontWeight: '700', color: colors.primaryContainer, letterSpacing: 3, marginBottom: 16 },
   modalDesc:   { fontSize: 13, color: colors.onSurfaceVariant, lineHeight: 20, marginBottom: 24 },
+
+  formCuesBox:  { backgroundColor: colors.surfaceContainerHighest, borderRadius: 14, padding: 14, marginBottom: 20, gap: 8 },
+  formCuesTitle:{ fontSize: 8, fontWeight: '900', color: colors.primaryContainer, letterSpacing: 2, marginBottom: 4 },
+  formCueRow:   { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
+  formCueDot:   { fontSize: 10, color: colors.primaryContainer, marginTop: 1 },
+  formCueText:  { flex: 1, fontSize: 12, color: colors.onSurface, lineHeight: 18 },
 
   statsGrid: { flexDirection: 'row', gap: 12, marginBottom: 20 },
   statBox:   {

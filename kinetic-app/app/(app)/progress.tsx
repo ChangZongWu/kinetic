@@ -206,50 +206,59 @@ function computePRs(logs: WorkoutLog[]): Record<string, number> {
   return prs;
 }
 
-// ── Strength Progress Chart ────────────────────────────────────────────────────
+// ── 1RM + Strength Progress Chart ─────────────────────────────────────────────
+
+// Epley formula: weight × (1 + reps/30)
+function estimate1RM(weight: number, reps: number): number {
+  if (reps === 1) return weight;
+  return Math.round(weight * (1 + reps / 30));
+}
 
 interface ExerciseProgress {
   name: string;
-  points: { date: string; maxWeight: number }[];
+  points: { date: string; maxWeight: number; orm: number }[];
 }
 
 function buildStrengthProgress(logs: WorkoutLog[]): ExerciseProgress[] {
-  // Group by exercise, collect max weight per session
-  const map: Record<string, { name: string; byDate: Record<string, number> }> = {};
+  // Group by exercise, collect max 1RM per session date
+  const map: Record<string, { name: string; byDate: Record<string, { maxWeight: number; orm: number }> }> = {};
   const sorted = [...logs].sort((a, b) => a.logged_at.localeCompare(b.logged_at));
   for (const log of sorted) {
     for (const s of log.log_sets ?? []) {
       if (!s.weight_kg || s.weight_kg === 0) continue;
       const name = s.exercises?.name ?? 'Unknown';
       const date = log.logged_at.slice(0, 10);
+      const orm = estimate1RM(s.weight_kg, s.reps ?? 1);
       if (!map[s.exercise_id]) map[s.exercise_id] = { name, byDate: {} };
-      if (!map[s.exercise_id].byDate[date] || s.weight_kg > map[s.exercise_id].byDate[date]) {
-        map[s.exercise_id].byDate[date] = s.weight_kg;
+      const existing = map[s.exercise_id].byDate[date];
+      if (!existing || orm > existing.orm) {
+        map[s.exercise_id].byDate[date] = { maxWeight: s.weight_kg, orm };
       }
     }
   }
   return Object.values(map)
     .map(ex => ({
       name: ex.name,
-      points: Object.entries(ex.byDate).map(([date, maxWeight]) => ({ date, maxWeight })),
+      points: Object.entries(ex.byDate).map(([date, v]) => ({ date, maxWeight: v.maxWeight, orm: v.orm })),
     }))
-    .filter(ex => ex.points.length >= 2) // only show if 2+ sessions logged
-    .slice(0, 5); // top 5 exercises
+    .filter(ex => ex.points.length >= 2)
+    .slice(0, 5);
 }
 
 const CHART_W = 260;
 const SCHART_H = 56;
 
-function StrengthChart({ points }: { points: { date: string; maxWeight: number }[] }) {
-  const max = Math.max(...points.map(p => p.maxWeight));
-  const min = Math.min(...points.map(p => p.maxWeight));
+function StrengthChart({ points }: { points: { date: string; maxWeight: number; orm: number }[] }) {
+  const max = Math.max(...points.map(p => p.orm));
+  const min = Math.min(...points.map(p => p.orm));
   const range = max - min || 1;
   const step  = CHART_W / (points.length - 1);
 
   const pts = points.map((p, i) => ({
     x: i * step,
-    y: SCHART_H - ((p.maxWeight - min) / range) * SCHART_H,
-    weight: p.maxWeight,
+    y: SCHART_H - ((p.orm - min) / range) * SCHART_H,
+    orm: p.orm,
+    maxWeight: p.maxWeight,
   }));
 
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -303,7 +312,7 @@ function StrengthChart({ points }: { points: { date: string; maxWeight: number }
           {(() => { const d = new Date(pts[0] ? points[0].date : ''); return `${monthNames[d.getMonth()]} ${d.getDate()}`; })()}
         </Text>
         <Text style={[sc.axisLbl, { color: colors.primaryContainer }]}>
-          {max}kg
+          {max}kg 1RM
         </Text>
         <Text style={sc.axisLbl}>
           {(() => { const d = new Date(points[points.length - 1].date); return `${monthNames[d.getMonth()]} ${d.getDate()}`; })()}
@@ -625,11 +634,11 @@ export default function Progress() {
                 <View key={ex.name} style={[styles.chartCard, { marginBottom: 12 }]}>
                   <Text style={styles.strengthExName}>{ex.name}</Text>
                   <Text style={styles.strengthExSub}>
-                    {ex.points[0].maxWeight}kg → {ex.points[ex.points.length - 1].maxWeight}kg
+                    EST. 1RM: {ex.points[0].orm}kg → {ex.points[ex.points.length - 1].orm}kg
                     {'  '}
-                    {ex.points[ex.points.length - 1].maxWeight > ex.points[0].maxWeight
+                    {ex.points[ex.points.length - 1].orm > ex.points[0].orm
                       ? <Text style={{ color: colors.primaryContainer }}>
-                          +{(ex.points[ex.points.length - 1].maxWeight - ex.points[0].maxWeight).toFixed(1)}kg ↑
+                          +{ex.points[ex.points.length - 1].orm - ex.points[0].orm}kg ↑
                         </Text>
                       : null}
                   </Text>

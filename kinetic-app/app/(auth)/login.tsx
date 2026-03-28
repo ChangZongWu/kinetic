@@ -45,7 +45,7 @@ export default function LoginScreen() {
           await supabase.from('profiles').upsert({
             id: data.user.id,
             full_name: fullName,
-            units: 'kg',
+            units: 'metric',
             tier: 'free',
           });
         }

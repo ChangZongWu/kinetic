@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useState, useCallback } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -40,6 +41,7 @@ interface Plan {
 interface Profile {
   full_name?: string;
   goal?: string;
+  email?: string;
 }
 
 interface LogSet {
@@ -155,10 +157,11 @@ const cs = StyleSheet.create({
 
 export default function Dashboard() {
   const router = useRouter();
-  const [plans,   setPlans]   = useState<Plan[]>([]);
-  const [profile, setProfile] = useState<Profile>({});
-  const [logs,    setLogs]    = useState<WorkoutLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [plans,      setPlans]      = useState<Plan[]>([]);
+  const [profile,    setProfile]    = useState<Profile>({});
+  const [logs,       setLogs]       = useState<WorkoutLog[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [previewDay, setPreviewDay] = useState<string | null>(null);
 
   const todayDay   = getTodayDay();
   const todayIndex = DAYS.indexOf(todayDay);
@@ -172,6 +175,7 @@ export default function Dashboard() {
   async function loadData() {
     setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const headers = await getAuthHeaders();
       const [plansRes, profileRes, logsRes] = await Promise.all([
         fetch(`${API_URL}/plans`,   { headers }),
@@ -179,7 +183,10 @@ export default function Dashboard() {
         fetch(`${API_URL}/logs`,    { headers }),
       ]);
       if (plansRes.ok)   setPlans(await plansRes.json());
-      if (profileRes.ok) setProfile(await profileRes.json());
+      if (profileRes.ok) {
+        const p = await profileRes.json();
+        setProfile({ ...p, email: user?.email ?? '' });
+      }
       if (logsRes.ok)    setLogs(await logsRes.json());
     } finally {
       setLoading(false);
@@ -199,7 +206,9 @@ export default function Dashboard() {
     return 'GOOD EVENING';
   };
 
-  const firstName = profile.full_name?.split(' ')[0]?.toUpperCase() ?? 'ATHLETE';
+  // Bug 4: fall back to email username instead of generic "ATHLETE"
+  const emailUsername = profile.email?.split('@')[0]?.toUpperCase() ?? 'ATHLETE';
+  const firstName = profile.full_name?.split(' ')[0]?.toUpperCase() || emailUsername;
 
   if (loading) {
     return (
@@ -210,7 +219,8 @@ export default function Dashboard() {
   }
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+  <View style={styles.root}>
+    <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
       {/* Greeting */}
       <View style={styles.greetingRow}>
@@ -239,9 +249,9 @@ export default function Dashboard() {
           <Text style={styles.statNum}>{streak}</Text>
           <Text style={styles.statLabel}>STREAK 🔥</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.statCard} onPress={() => router.push('/(app)/workout-builder')} activeOpacity={0.75}>
+        <TouchableOpacity style={styles.statCard} onPress={() => setPreviewDay(todayDay)} activeOpacity={0.75}>
           <Text style={styles.statNum}>{todayExercises.length}</Text>
-          <Text style={styles.statLabel}>TODAY</Text>
+          <Text style={styles.statLabel}>EXERCISES</Text>
         </TouchableOpacity>
       </View>
 
@@ -266,7 +276,7 @@ export default function Dashboard() {
                 <TouchableOpacity
                   key={day}
                   style={[styles.dayCard, isToday && styles.dayCardToday]}
-                  onPress={() => router.push({ pathname: '/(app)/workout-builder', params: { jumpDay: day } } as any)}
+                  onPress={() => setPreviewDay(day)}
                   activeOpacity={0.75}
                 >
                   <Text style={[styles.dayCardLabel, isToday && styles.dayCardLabelToday]}>{DAY_LBLS[i]}</Text>
@@ -378,6 +388,55 @@ export default function Dashboard() {
       )}
 
     </ScrollView>
+
+    {/* Day preview modal */}
+    {activePlan && (
+      <Modal
+        visible={!!previewDay}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPreviewDay(null)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setPreviewDay(null)}>
+          <View style={styles.modalSheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalDayLabel}>{previewDay}</Text>
+                <Text style={styles.modalPlanName}>{activePlan.name.toUpperCase()}</Text>
+              </View>
+              <TouchableOpacity onPress={() => { setPreviewDay(null); router.push('/(app)/workout-builder'); }}>
+                <Text style={styles.modalEditBtn}>EDIT ›</Text>
+              </TouchableOpacity>
+            </View>
+            {(() => {
+              const sessions = activePlan.plan_sessions.filter(s => s.day_of_week === previewDay);
+              if (sessions.length === 0) return (
+                <Text style={styles.modalEmpty}>Rest day — no exercises scheduled.</Text>
+              );
+              return sessions.map((s, i) => (
+                <View key={s.id} style={[styles.modalExRow, i > 0 && styles.modalExRowBorder]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.modalExName}>{s.exercises.name}</Text>
+                    <Text style={styles.modalExMeta}>{s.exercises.muscle_groups?.name} · {s.exercises.equipment}</Text>
+                  </View>
+                  <Text style={styles.modalExSets}>{s.exercises.sets_suggestion}×{s.exercises.reps_suggestion}</Text>
+                </View>
+              ));
+            })()}
+            {previewDay === todayDay && (
+              <TouchableOpacity
+                style={styles.startSessionBtn}
+                onPress={() => { setPreviewDay(null); router.push({ pathname: '/(app)/active-workout', params: { planId: activePlan.id, day: todayDay } } as any); }}
+              >
+                <Text style={styles.startSessionBtnText}>▶  START WORKOUT</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    )}
+  </View>
   );
 }
 
@@ -489,4 +548,26 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: 10 },
   emptyStateTitle: { fontSize: 22, fontWeight: '900', color: colors.onSurface },
   emptyStateText: { fontSize: 12, color: colors.onSurfaceVariant, textAlign: 'center', marginBottom: 8 },
+
+  // Day preview modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalSheet: {
+    backgroundColor: colors.surfaceContainerHigh,
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    padding: 24, paddingBottom: 40, maxHeight: '70%',
+  },
+  sheetHandle: {
+    width: 40, height: 4, borderRadius: 2,
+    backgroundColor: colors.outlineVariant, alignSelf: 'center', marginBottom: 20,
+  },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  modalDayLabel: { fontSize: 28, fontWeight: '900', color: colors.primaryContainer, letterSpacing: -0.5 },
+  modalPlanName: { fontSize: 9, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 2, marginTop: 2 },
+  modalEditBtn: { fontSize: 11, fontWeight: '800', color: colors.primaryContainer, letterSpacing: 1 },
+  modalEmpty: { fontSize: 13, color: colors.onSurfaceVariant, paddingVertical: 24, textAlign: 'center' },
+  modalExRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
+  modalExRowBorder: { borderTopWidth: 1, borderTopColor: colors.outlineVariant + '33' },
+  modalExName: { fontSize: 15, fontWeight: '800', color: colors.onSurface },
+  modalExMeta: { fontSize: 10, color: colors.onSurfaceVariant, marginTop: 2 },
+  modalExSets: { fontSize: 14, fontWeight: '800', color: colors.tertiary },
 });

@@ -80,6 +80,8 @@ export default function ActiveWorkout() {
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);
   const [finished, setFinished]   = useState(false);
+  // Last session weights: exerciseId → { weight, reps }
+  const [lastWeights, setLastWeights] = useState<Record<string, { weight: number; reps: number }>>({});
 
   // Stopwatch
   const [elapsed, setElapsed]     = useState(0);
@@ -142,6 +144,29 @@ export default function ActiveWorkout() {
 
       setPlan(target);
       setBlocks(exerciseBlocks);
+
+      // Fetch profile for default rest timer
+      const profileRes = await fetch(`${API_URL}/profile`, { headers });
+      if (profileRes.ok) {
+        const p = await profileRes.json();
+        if (p.default_rest_timer) setRestDuration(p.default_rest_timer);
+      }
+
+      // Fetch last session weights for reference
+      const logsRes = await fetch(`${API_URL}/logs`, { headers });
+      if (logsRes.ok) {
+        const logs: any[] = await logsRes.json();
+        const last: Record<string, { weight: number; reps: number }> = {};
+        // logs are sorted newest first — first occurrence = most recent
+        for (const log of logs) {
+          for (const set of log.log_sets ?? []) {
+            if (!last[set.exercise_id] && set.weight_kg) {
+              last[set.exercise_id] = { weight: set.weight_kg, reps: set.reps ?? 0 };
+            }
+          }
+        }
+        setLastWeights(last);
+      }
     } finally {
       setLoading(false);
     }
@@ -342,6 +367,13 @@ export default function ActiveWorkout() {
               </View>
             </View>
 
+            {/* Last session reference */}
+            {lastWeights[block.exercise.id] && (
+              <Text style={s.lastRef}>
+                Last time: {lastWeights[block.exercise.id].weight}kg × {lastWeights[block.exercise.id].reps} reps
+              </Text>
+            )}
+
             {/* Column headers */}
             <View style={s.colHeader}>
               <View style={s.setNumCol} />
@@ -496,6 +528,7 @@ const s = StyleSheet.create({
   blockInfo:   { flex: 1 },
   blockName:   { fontSize: 16, fontWeight: '800', color: colors.onSurface },
   blockMeta:   { fontSize: 9, color: colors.onSurfaceVariant, letterSpacing: 0.5, marginTop: 2 },
+  lastRef:     { fontSize: 10, color: colors.primaryContainer + 'cc', fontWeight: '700', marginBottom: 8, letterSpacing: 0.3 },
 
   // Column headers
   colHeader:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 2, marginBottom: 4 },

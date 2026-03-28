@@ -126,7 +126,7 @@ function BodyMap({
               x={r.cx} y={r.cy}
               dy="0.35em"
               textAnchor="middle"
-              fontSize={4.5}
+              fontSize={7}
               fontWeight="bold"
               fill={on ? LABEL_ON : LABEL_OFF}
             >
