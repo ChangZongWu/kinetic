@@ -1,6 +1,6 @@
 # Kinetic — Workout Tracking App
 
-A premium fitness tracking app with a dark theme, interactive muscle selector, AI fitness advisor, and real-time workout logging. Built with Expo React Native (web + mobile), Python FastAPI, and Supabase.
+A premium fitness tracking app with a dark theme, interactive muscle selector, and real-time workout logging. Built with Expo React Native (web + mobile), Python FastAPI, and Supabase.
 
 ---
 
@@ -18,7 +18,6 @@ A premium fitness tracking app with a dark theme, interactive muscle selector, A
 - **Workout Builder** — Create plans, assign exercises by day, configure sets & reps, apply templates (PPL, Upper/Lower, Full Body 3×, 5×5)
 - **Exercise Library** — Filter by muscle group via interactive body diagram, create custom exercises
 - **Progress** — 6-week volume chart, strength progression graphs, clickable training calendar, workout history
-- **AI Advisor** — Claude-powered fitness coach with context of your profile and workout history
 - **Profile** — Unit toggle (metric/imperial), fitness goal, rest timer default
 
 ---
@@ -39,9 +38,9 @@ A premium fitness tracking app with a dark theme, interactive muscle selector, A
 │  │  ┌─────────────┐  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────┐  ┌─────────────────┐  │   │
 │  │  │  Dashboard  │  │ Active Workout   │  │ Workout Builder  │  │   Progress   │  │  Exercise List  │  │   │
 │  │  └─────────────┘  └──────────────────┘  └──────────────────┘  └──────────────┘  └─────────────────┘  │   │
-│  │  ┌──────────────────┐  ┌─────────────────────┐  ┌───────────────────────────────────────────────┐    │   │
-│  │  │ Muscle Selector  │  │       Profile       │  │                 AI Advisor                    │    │   │
-│  │  └──────────────────┘  └─────────────────────┘  └───────────────────────────────────────────────┘    │   │
+│  │  ┌──────────────────┐  ┌─────────────────────┐                                                        │   │
+│  │  │ Muscle Selector  │  │       Profile       │                                                        │   │
+│  │  └──────────────────┘  └─────────────────────┘                                                        │   │
 │  └──────────────────────────────────────────────────────────────────────────────────────────────────────┘   │
 │                                                                                                              │
 │  ┌────────────────────────────────────┐   ┌────────────────────────────────────────────────────────────┐   │
@@ -50,8 +49,8 @@ A premium fitness tracking app with a dark theme, interactive muscle selector, A
 │  │  · localStorage (plan selection)   │   │  · JWT in localStorage / AsyncStorage                      │   │
 │  └────────────────────────────────────┘   └────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-         │  ① Login/signup direct to Supabase          │  ② REST + JWT          ③ /ai/chat → SSE
-         ▼                                             ▼                                     ▲
+         │  ① Login/signup direct to Supabase                    │  ② REST + JWT
+         ▼                                                       ▼                         ▲
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                    BACKEND  ·  Python FastAPI                                               │
 │                                       ☁  Deployed on Railway                                                │
@@ -66,10 +65,6 @@ A premium fitness tracking app with a dark theme, interactive muscle selector, A
 │  │  ┌──────┐  ┌─────────┐  ┌───────────┐  ┌───────┐  ┌─────────┐  ┌──────────────┐  ┌──────────┐      │   │
 │  │  │health│  │ muscles │  │ exercises │  │ plans │  │ profile │  │ session_sets │  │   logs   │      │   │
 │  │  └──────┘  └─────────┘  └───────────┘  └───────┘  └─────────┘  └──────────────┘  └──────────┘      │   │
-│  │                                                                                                        │   │
-│  │  ┌──────────────────────────────────────────────────────────────────────────────────────────────┐    │   │
-│  │  │  ai  ──►  Anthropic Claude (claude-opus-4-6)  ──►  Server-Sent Events stream  ──►  Frontend  │    │   │
-│  │  └──────────────────────────────────────────────────────────────────────────────────────────────┘    │   │
 │  └──────────────────────────────────────────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
          │  ① JWT verification          │  ② DB queries (Supabase service key)          ▲  Results
@@ -92,19 +87,11 @@ A premium fitness tracking app with a dark theme, interactive muscle selector, A
 │  │                                 │   │  └──────────────┘   └──────────────┘                          │  │
 │  └─────────────────────────────────┘   └────────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-                                                    │
-                                                    ▼
-                              ┌─────────────────────────────────────────┐
-                              │     EXTERNAL  ·  Anthropic Claude API   │
-                              │     Model: claude-opus-4-6              │
-                              │     Used by: /ai router → SSE stream    │
-                              └─────────────────────────────────────────┘
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║  DATA FLOWS                                                                                                  ║
 ║  ①  User logs in  ──►  Supabase Auth  ──►  JWT returned and stored in frontend                             ║
 ║  ②  All API calls: Frontend + JWT  ──►  FastAPI verifies JWT  ──►  Supabase DB  ──►  JSON response         ║
-║  ③  AI chat: Frontend  ──►  FastAPI /ai  ──►  Anthropic Claude  ──►  SSE streamed back to screen           ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 ```
 
@@ -118,7 +105,6 @@ A premium fitness tracking app with a dark theme, interactive muscle selector, A
 | Backend | Python FastAPI · Uvicorn | Railway |
 | Database | Supabase PostgreSQL | Supabase Cloud |
 | Auth | Supabase Auth (JWT) | Supabase Cloud |
-| AI | Anthropic Claude (`claude-opus-4-6`) | Anthropic API |
 
 ---
 
@@ -162,7 +148,6 @@ All endpoints require `Authorization: Bearer <JWT>` except `/health`, `/muscles`
 | GET | `/logs` | List recent workout logs (last 30) |
 | POST | `/logs` | Save a completed workout |
 | DELETE | `/logs/:id` | Delete a workout log |
-| POST | `/ai/chat` | Stream AI fitness advice (SSE) |
 
 ---
 
@@ -181,8 +166,7 @@ kinetic/
 │   │       ├── exercise-list.tsx # Exercise library with search and filters
 │   │       ├── muscle-selector.tsx# Interactive body diagram
 │   │       ├── progress.tsx      # Charts, calendar, workout history
-│   │       ├── profile.tsx       # User settings and unit toggle
-│   │       └── ai-advisor.tsx    # Claude-powered fitness chat
+│   │       └── profile.tsx       # User settings and unit toggle
 │   ├── components/               # Shared UI components
 │   ├── lib/
 │   │   ├── supabase.ts           # Supabase client (native)
@@ -202,8 +186,7 @@ kinetic/
     │   ├── plans.py
     │   ├── profile.py
     │   ├── session_sets.py
-    │   ├── logs.py
-    │   └── ai.py                 # Claude SSE streaming endpoint
+    │   └── logs.py
     ├── requirements.txt
     └── railway.toml              # Railway deployment config
 ```
@@ -217,7 +200,6 @@ kinetic/
 - Node.js 18+
 - Python 3.11+
 - A [Supabase](https://supabase.com) project
-- An [Anthropic](https://console.anthropic.com) API key
 
 ### Frontend Setup
 
@@ -242,7 +224,7 @@ pip install -r requirements.txt
 
 # Create .env
 cp .env.example .env
-# Fill in SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_KEY, ANTHROPIC_API_KEY
+# Fill in SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_KEY
 
 uvicorn main:app --reload
 ```
@@ -261,7 +243,6 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your_anon_key
 SUPABASE_SERVICE_KEY=your_service_key
-ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ---
