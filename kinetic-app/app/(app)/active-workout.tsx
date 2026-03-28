@@ -76,9 +76,13 @@ function formatTime(seconds: number): string {
 }
 
 // ── Module-level workout session persistence (survives tab navigation) ─────────
-// Stores start timestamp so timer doesn't reset when user switches tabs
+// All vars survive component unmount/remount when switching tabs
 let _workoutStartMs: number | null = null;
-let _loadedKey: string | null = null; // "planId-day" — prevents re-loading blocks on return
+let _loadedKey: string | null = null;
+let _savedBlocks: ExerciseBlock[] | null = null;
+let _savedLastWeights: Record<string, { weight: number; reps: number }> = {};
+let _savedPlan: Plan | null = null;
+let _savedRestDuration = 90;
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
@@ -114,16 +118,25 @@ export default function ActiveWorkout() {
   useFocusEffect(useCallback(() => {
     const key = `${params.planId ?? 'none'}-${params.day ?? 'today'}`;
     if (_loadedKey !== key) {
-      // New workout session — reset timer and load blocks fresh
+      // New workout — reset everything and load fresh
       _workoutStartMs = Date.now();
       _loadedKey = key;
+      _savedBlocks = null;
       elapsedRef.current = 0;
       setElapsed(0);
       load();
-    } else {
-      // Returning from another tab — restore elapsed from wall clock
+    } else if (_savedBlocks) {
+      // Returning from another tab — restore persisted state, no re-fetch needed
+      setBlocks(_savedBlocks);
+      setLastWeights(_savedLastWeights);
+      setPlan(_savedPlan);
+      setRestDuration(_savedRestDuration);
       elapsedRef.current = Math.floor((Date.now() - (_workoutStartMs ?? Date.now())) / 1000);
       setElapsed(elapsedRef.current);
+      setLoading(false);
+    } else {
+      // Key matches but no saved blocks yet (edge case) — reload
+      load();
     }
     startStopwatch();
     return () => {
@@ -182,6 +195,8 @@ export default function ActiveWorkout() {
         }
       }
 
+      _savedPlan = target;
+      _savedBlocks = exerciseBlocks;
       setPlan(target);
       setBlocks(exerciseBlocks);
 
@@ -189,7 +204,10 @@ export default function ActiveWorkout() {
       const profileRes = await fetch(`${API_URL}/profile`, { headers });
       if (profileRes.ok) {
         const p = await profileRes.json();
-        if (p.default_rest_timer) setRestDuration(p.default_rest_timer);
+        if (p.default_rest_timer) {
+          _savedRestDuration = p.default_rest_timer;
+          setRestDuration(p.default_rest_timer);
+        }
       }
 
       // Fetch last session weights for reference
@@ -197,7 +215,6 @@ export default function ActiveWorkout() {
       if (logsRes.ok) {
         const logs: any[] = await logsRes.json();
         const last: Record<string, { weight: number; reps: number }> = {};
-        // logs are sorted newest first — first occurrence = most recent
         for (const log of logs) {
           for (const set of log.log_sets ?? []) {
             if (!last[set.exercise_id] && set.weight_kg) {
@@ -205,6 +222,7 @@ export default function ActiveWorkout() {
             }
           }
         }
+        _savedLastWeights = last;
         setLastWeights(last);
       }
     } finally {
@@ -244,6 +262,11 @@ export default function ActiveWorkout() {
     setRestActive(false);
     setRestSeconds(0);
   }
+
+  // Keep module-level blocks in sync so navigation away/back restores progress
+  useEffect(() => {
+    if (blocks.length > 0) _savedBlocks = blocks;
+  }, [blocks]);
 
   // ── Set updates ───────────────────────────────────────────────────────────────
 
