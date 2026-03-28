@@ -206,6 +206,185 @@ function computePRs(logs: WorkoutLog[]): Record<string, number> {
   return prs;
 }
 
+// ── Strength Progress Chart ────────────────────────────────────────────────────
+
+interface ExerciseProgress {
+  name: string;
+  points: { date: string; maxWeight: number }[];
+}
+
+function buildStrengthProgress(logs: WorkoutLog[]): ExerciseProgress[] {
+  // Group by exercise, collect max weight per session
+  const map: Record<string, { name: string; byDate: Record<string, number> }> = {};
+  const sorted = [...logs].sort((a, b) => a.logged_at.localeCompare(b.logged_at));
+  for (const log of sorted) {
+    for (const s of log.log_sets ?? []) {
+      if (!s.weight_kg || s.weight_kg === 0) continue;
+      const name = s.exercises?.name ?? 'Unknown';
+      const date = log.logged_at.slice(0, 10);
+      if (!map[s.exercise_id]) map[s.exercise_id] = { name, byDate: {} };
+      if (!map[s.exercise_id].byDate[date] || s.weight_kg > map[s.exercise_id].byDate[date]) {
+        map[s.exercise_id].byDate[date] = s.weight_kg;
+      }
+    }
+  }
+  return Object.values(map)
+    .map(ex => ({
+      name: ex.name,
+      points: Object.entries(ex.byDate).map(([date, maxWeight]) => ({ date, maxWeight })),
+    }))
+    .filter(ex => ex.points.length >= 2) // only show if 2+ sessions logged
+    .slice(0, 5); // top 5 exercises
+}
+
+const CHART_W = 260;
+const SCHART_H = 56;
+
+function StrengthChart({ points }: { points: { date: string; maxWeight: number }[] }) {
+  const max = Math.max(...points.map(p => p.maxWeight));
+  const min = Math.min(...points.map(p => p.maxWeight));
+  const range = max - min || 1;
+  const step  = CHART_W / (points.length - 1);
+
+  const pts = points.map((p, i) => ({
+    x: i * step,
+    y: SCHART_H - ((p.maxWeight - min) / range) * SCHART_H,
+    weight: p.maxWeight,
+  }));
+
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  return (
+    <View>
+      <View style={{ height: SCHART_H, position: 'relative' }}>
+        {/* Grid lines */}
+        {[0, 0.5, 1].map(f => (
+          <View key={f} style={{
+            position: 'absolute', left: 0, right: 0,
+            top: f * SCHART_H,
+            height: 1, backgroundColor: colors.outlineVariant + '33',
+          }} />
+        ))}
+        {/* Dots and connecting lines */}
+        {pts.map((pt, i) => (
+          <View key={i}>
+            {/* Connecting line to next point */}
+            {i < pts.length - 1 && (() => {
+              const next = pts[i + 1];
+              const dx = next.x - pt.x;
+              const dy = next.y - pt.y;
+              const len = Math.sqrt(dx * dx + dy * dy);
+              const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+              return (
+                <View style={{
+                  position: 'absolute',
+                  left: pt.x, top: pt.y,
+                  width: len, height: 1.5,
+                  backgroundColor: colors.primaryContainer + 'aa',
+                  transformOrigin: '0 50%',
+                  transform: [{ rotate: `${angle}deg` }],
+                } as any} />
+              );
+            })()}
+            {/* Dot */}
+            <View style={{
+              position: 'absolute',
+              left: pt.x - 4, top: pt.y - 4,
+              width: 8, height: 8, borderRadius: 4,
+              backgroundColor: i === pts.length - 1 ? colors.primaryContainer : colors.surfaceContainerHighest,
+              borderWidth: 1.5, borderColor: colors.primaryContainer,
+            }} />
+          </View>
+        ))}
+      </View>
+      {/* X-axis labels */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
+        <Text style={sc.axisLbl}>
+          {(() => { const d = new Date(pts[0] ? points[0].date : ''); return `${monthNames[d.getMonth()]} ${d.getDate()}`; })()}
+        </Text>
+        <Text style={[sc.axisLbl, { color: colors.primaryContainer }]}>
+          {max}kg
+        </Text>
+        <Text style={sc.axisLbl}>
+          {(() => { const d = new Date(points[points.length - 1].date); return `${monthNames[d.getMonth()]} ${d.getDate()}`; })()}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const sc = StyleSheet.create({
+  axisLbl: { fontSize: 8, color: colors.onSurfaceVariant, fontWeight: '700' },
+});
+
+// ── Calendar ──────────────────────────────────────────────────────────────────
+
+function TrainingCalendar({ logs }: { logs: WorkoutLog[] }) {
+  const trainedDates = new Set(logs.map(l => l.logged_at.slice(0, 10)));
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // Build grid: start week on Mon (shift Sun to end)
+  const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+  const cells: (number | null)[] = [...Array(startOffset).fill(null)];
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  return (
+    <View>
+      <Text style={cal.monthLabel}>{monthNames[month].toUpperCase()} {year}</Text>
+      {/* Day headers */}
+      <View style={cal.row}>
+        {['M','T','W','T','F','S','S'].map((d, i) => (
+          <Text key={i} style={cal.dayHeader}>{d}</Text>
+        ))}
+      </View>
+      {/* Calendar grid */}
+      {Array.from({ length: cells.length / 7 }, (_, wi) => (
+        <View key={wi} style={cal.row}>
+          {cells.slice(wi * 7, wi * 7 + 7).map((day, di) => {
+            if (!day) return <View key={di} style={cal.cell} />;
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const trained = trainedDates.has(dateStr);
+            const isToday = dateStr === todayStr;
+            return (
+              <View key={di} style={[cal.cell, trained && cal.trainedCell, isToday && cal.todayCell]}>
+                <Text style={[cal.dayNum, trained && cal.trainedNum, isToday && cal.todayNum]}>
+                  {day}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      ))}
+      <View style={cal.legend}>
+        <View style={[cal.legendDot, { backgroundColor: colors.primaryContainer }]} />
+        <Text style={cal.legendText}>Training day</Text>
+      </View>
+    </View>
+  );
+}
+
+const cal = StyleSheet.create({
+  monthLabel: { fontSize: 11, fontWeight: '800', color: colors.onSurface, letterSpacing: 1, marginBottom: 12 },
+  row:        { flexDirection: 'row', marginBottom: 4 },
+  dayHeader:  { flex: 1, textAlign: 'center', fontSize: 8, fontWeight: '700', color: colors.onSurfaceVariant, letterSpacing: 1 },
+  cell:       { flex: 1, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 6 },
+  trainedCell:{ backgroundColor: colors.primaryContainer + '22' },
+  todayCell:  { borderWidth: 1.5, borderColor: colors.primaryContainer },
+  dayNum:     { fontSize: 11, color: colors.onSurfaceVariant },
+  trainedNum: { color: colors.primaryContainer, fontWeight: '800' },
+  todayNum:   { color: colors.primaryContainer, fontWeight: '900' },
+  legend:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
+  legendDot:  { width: 8, height: 8, borderRadius: 4 },
+  legendText: { fontSize: 9, color: colors.onSurfaceVariant },
+});
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function Progress() {
@@ -427,6 +606,40 @@ export default function Progress() {
               </View>
             </>
           ) : null;
+        })()}
+
+        {/* Training Calendar */}
+        <Text style={styles.sectionLabel}>TRAINING CALENDAR</Text>
+        <View style={styles.chartCard}>
+          <TrainingCalendar logs={logs} />
+        </View>
+
+        {/* Strength Progress */}
+        {(() => {
+          const progress = buildStrengthProgress(logs);
+          if (progress.length === 0) return null;
+          return (
+            <>
+              <Text style={styles.sectionLabel}>STRENGTH PROGRESS</Text>
+              {progress.map(ex => (
+                <View key={ex.name} style={[styles.chartCard, { marginBottom: 12 }]}>
+                  <Text style={styles.strengthExName}>{ex.name}</Text>
+                  <Text style={styles.strengthExSub}>
+                    {ex.points[0].maxWeight}kg → {ex.points[ex.points.length - 1].maxWeight}kg
+                    {'  '}
+                    {ex.points[ex.points.length - 1].maxWeight > ex.points[0].maxWeight
+                      ? <Text style={{ color: colors.primaryContainer }}>
+                          +{(ex.points[ex.points.length - 1].maxWeight - ex.points[0].maxWeight).toFixed(1)}kg ↑
+                        </Text>
+                      : null}
+                  </Text>
+                  <View style={{ marginTop: 12 }}>
+                    <StrengthChart points={ex.points} />
+                  </View>
+                </View>
+              ))}
+            </>
+          );
         })()}
 
         {/* History */}
@@ -653,6 +866,8 @@ const styles = StyleSheet.create({
   logExMuscle: { fontSize: 10, color: colors.onSurfaceVariant },
   logExSets: { fontSize: 13, fontWeight: '800', color: colors.tertiary },
   prBadge: { fontSize: 9, fontWeight: '800', color: colors.primaryContainer, letterSpacing: 0.5 },
+  strengthExName: { fontSize: 13, fontWeight: '800', color: colors.onSurface, marginBottom: 2 },
+  strengthExSub:  { fontSize: 10, color: colors.onSurfaceVariant },
 
   logCardFooter: {
     flexDirection: 'row', justifyContent: 'flex-end', gap: 16,

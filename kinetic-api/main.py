@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import health, muscles, exercises, plans, profile, session_sets, ai, logs
+from routers import health, muscles, exercises, plans, profile, session_sets, logs
 
 app = FastAPI(title="Kinetic Workout API")
 
@@ -17,5 +17,4 @@ app.include_router(exercises.router)
 app.include_router(plans.router)
 app.include_router(profile.router)
 app.include_router(session_sets.router)
-app.include_router(ai.router)
 app.include_router(logs.router)

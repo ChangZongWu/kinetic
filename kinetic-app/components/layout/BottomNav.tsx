@@ -7,7 +7,7 @@ const navItems = [
   { label: "Muscles",  href: "/(app)/muscle-selector", icon: "◉" },
   { label: "Workout",  href: "/(app)/workout-builder", icon: "◇" },
   { label: "Progress", href: "/(app)/progress",        icon: "▲" },
-  { label: "AI",       href: "/(app)/ai-advisor",      icon: "◎" },
+  { label: "Profile",  href: "/(app)/profile",         icon: "◯" },
 ];
 
 export default function BottomNav() {

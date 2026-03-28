@@ -60,21 +60,84 @@ async function getAuthHeaders() {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
+// ── Templates ──────────────────────────────────────────────────────────────────
+
+interface TemplateDefinition {
+  name: string;
+  goal: string;
+  label: string;
+  desc: string;
+  days: Record<string, string[]>;
+}
+
+const TEMPLATES: TemplateDefinition[] = [
+  {
+    name: 'Push Pull Legs',
+    goal: 'hypertrophy',
+    label: 'PUSH PULL LEGS',
+    desc: '6-day split. Classic muscle-building program.',
+    days: {
+      Mon: ['Bench Press', 'Overhead Press', 'Tricep'],
+      Tue: ['Pull Up', 'Barbell Row', 'Bicep Curl'],
+      Wed: ['Back Squat', 'Romanian Deadlift', 'Calf'],
+      Thu: ['Bench Press', 'Lateral Raise', 'Tricep'],
+      Fri: ['Deadlift', 'Pull Up', 'Bicep Curl'],
+      Sat: ['Back Squat', 'Leg Press', 'Calf'],
+    },
+  },
+  {
+    name: 'Upper Lower Split',
+    goal: 'strength',
+    label: 'UPPER / LOWER',
+    desc: '4-day split. Great for strength & size.',
+    days: {
+      Mon: ['Bench Press', 'Barbell Row', 'Overhead Press', 'Bicep Curl'],
+      Tue: ['Back Squat', 'Romanian Deadlift', 'Leg Press', 'Calf'],
+      Thu: ['Incline Bench', 'Pull Up', 'Lateral Raise', 'Tricep'],
+      Fri: ['Deadlift', 'Back Squat', 'Leg Curl', 'Calf'],
+    },
+  },
+  {
+    name: 'Full Body 3x',
+    goal: 'strength',
+    label: 'FULL BODY 3×',
+    desc: '3-day split. Ideal for beginners.',
+    days: {
+      Mon: ['Back Squat', 'Bench Press', 'Barbell Row', 'Overhead Press'],
+      Wed: ['Deadlift', 'Incline Bench', 'Pull Up', 'Bicep Curl'],
+      Fri: ['Back Squat', 'Bench Press', 'Barbell Row', 'Tricep'],
+    },
+  },
+  {
+    name: '5x5 Strength',
+    goal: 'strength',
+    label: '5×5 STRENGTH',
+    desc: '3-day alternating. Build raw strength fast.',
+    days: {
+      Mon: ['Back Squat', 'Bench Press', 'Barbell Row'],
+      Wed: ['Back Squat', 'Overhead Press', 'Deadlift'],
+      Fri: ['Back Squat', 'Bench Press', 'Barbell Row'],
+    },
+  },
+];
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function WorkoutBuilder() {
   const router  = useRouter();
   const params  = useLocalSearchParams<{ addExerciseId?: string; addDay?: string; addPlanId?: string; jumpDay?: string }>();
 
-  const [plans,           setPlans]           = useState<Plan[]>([]);
-  const [activePlanId,    setActivePlanId]     = useState<string | null>(null);
-  const [activeDay,       setActiveDay]        = useState('Mon');
-  const [loading,         setLoading]          = useState(true);
-  const [showNewPlanModal,setShowNewPlanModal] = useState(false);
-  const [newPlanName,     setNewPlanName]      = useState('');
-  const [newPlanGoal,     setNewPlanGoal]      = useState<string | null>(null);
-  const [renamingPlanId,  setRenamingPlanId]   = useState<string | null>(null);
-  const [renameText,      setRenameText]       = useState('');
+  const [plans,              setPlans]              = useState<Plan[]>([]);
+  const [activePlanId,       setActivePlanId]        = useState<string | null>(null);
+  const [activeDay,          setActiveDay]           = useState('Mon');
+  const [loading,            setLoading]             = useState(true);
+  const [showNewPlanModal,   setShowNewPlanModal]    = useState(false);
+  const [showTemplatesModal, setShowTemplatesModal]  = useState(false);
+  const [applyingTemplate,   setApplyingTemplate]    = useState(false);
+  const [newPlanName,        setNewPlanName]         = useState('');
+  const [newPlanGoal,        setNewPlanGoal]         = useState<string | null>(null);
+  const [renamingPlanId,     setRenamingPlanId]      = useState<string | null>(null);
+  const [renameText,         setRenameText]          = useState('');
   const addExerciseHandled = useRef<string | null>(null);
 
   // Inline sets state
@@ -224,6 +287,50 @@ export default function WorkoutBuilder() {
     } catch {}
   }
 
+  // ── Templates ─────────────────────────────────────────────────────────────────
+
+  async function applyTemplate(template: TemplateDefinition) {
+    setApplyingTemplate(true);
+    setShowTemplatesModal(false);
+    try {
+      const headers = await getAuthHeaders();
+      // 1. Fetch all exercises to match by name
+      const exRes = await fetch(`${API_URL}/exercises`, { headers });
+      const allExercises: any[] = exRes.ok ? await exRes.json() : [];
+
+      function findEx(name: string) {
+        return allExercises.find((e: any) =>
+          e.name.toLowerCase().includes(name.toLowerCase()) ||
+          name.toLowerCase().includes(e.name.toLowerCase())
+        );
+      }
+
+      // 2. Create plan
+      const planRes = await fetch(`${API_URL}/plans`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ name: template.name, goal: template.goal }),
+      });
+      const plan = await planRes.json();
+
+      // 3. Add sessions
+      for (const [day, exercises] of Object.entries(template.days)) {
+        for (const exName of exercises) {
+          const ex = findEx(exName);
+          if (ex) {
+            await fetch(`${API_URL}/plans/${plan.id}/sessions`, {
+              method: 'POST', headers,
+              body: JSON.stringify({ exercise_id: ex.id, day_of_week: day, is_rest_day: false }),
+            });
+          }
+        }
+      }
+
+      await loadPlans();
+      setActivePlanId(plan.id);
+    } catch {}
+    finally { setApplyingTemplate(false); }
+  }
+
   // ── Inline set operations ─────────────────────────────────────────────────────
 
   function updateSetInput(sessionId: string, setId: string, field: 'reps' | 'weight', value: string) {
@@ -303,9 +410,14 @@ export default function WorkoutBuilder() {
           <Text style={s.pageTitle}>WORKOUT</Text>
           <Text style={s.pageTitleAccent}>BUILDER</Text>
         </View>
-        <TouchableOpacity style={s.newPlanBtn} onPress={() => setShowNewPlanModal(true)}>
-          <Text style={s.newPlanBtnText}>+ NEW PLAN</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity style={s.templateBtn} onPress={() => setShowTemplatesModal(true)}>
+            <Text style={s.templateBtnText}>TEMPLATES</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.newPlanBtn} onPress={() => setShowNewPlanModal(true)}>
+            <Text style={s.newPlanBtnText}>+ NEW</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Plan selector tabs */}
@@ -480,6 +592,45 @@ export default function WorkoutBuilder() {
         </View>
       )}
 
+      {/* Applying template overlay */}
+      {applyingTemplate && (
+        <View style={s.applyingOverlay}>
+          <ActivityIndicator color={colors.primaryContainer} size="large" />
+          <Text style={s.applyingText}>BUILDING YOUR PLAN…</Text>
+        </View>
+      )}
+
+      {/* Templates Modal */}
+      <Modal visible={showTemplatesModal} transparent animationType="slide" onRequestClose={() => setShowTemplatesModal(false)}>
+        <View style={s.modalOverlay}>
+          <View style={s.modalSheet}>
+            <View style={s.sheetHandle} />
+            <Text style={s.modalTitle}>TEMPLATES</Text>
+            <Text style={s.modalSubtitle}>START WITH A PROVEN PROGRAM</Text>
+            {TEMPLATES.map(t => (
+              <TouchableOpacity
+                key={t.name}
+                style={s.templateCard}
+                onPress={() => applyTemplate(t)}
+                activeOpacity={0.8}
+              >
+                <View style={s.templateCardLeft}>
+                  <Text style={s.templateCardLabel}>{t.label}</Text>
+                  <Text style={s.templateCardDesc}>{t.desc}</Text>
+                  <Text style={s.templateCardDays}>
+                    {Object.keys(t.days).join(' · ')}
+                  </Text>
+                </View>
+                <Text style={s.templateCardGoal}>{t.goal.replace('_',' ').toUpperCase()}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={s.cancelBtn} onPress={() => setShowTemplatesModal(false)}>
+              <Text style={s.cancelBtnText}>CANCEL</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Rename Plan Modal */}
       <Modal visible={!!renamingPlanId} transparent animationType="slide" onRequestClose={() => setRenamingPlanId(null)}>
         <View style={s.modalOverlay}>
@@ -562,8 +713,28 @@ const s = StyleSheet.create({
   headerLeft:       { flexDirection: 'row', gap: 6, alignItems: 'flex-end' },
   pageTitle:        { fontSize: 28, fontWeight: '900', color: colors.onSurface, letterSpacing: -1 },
   pageTitleAccent:  { fontSize: 28, fontWeight: '900', color: colors.primaryContainer, letterSpacing: -1 },
-  newPlanBtn:       { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingHorizontal: 16, paddingVertical: 8 },
+  newPlanBtn:       { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingHorizontal: 14, paddingVertical: 8 },
   newPlanBtnText:   { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: 10, letterSpacing: 1 },
+  templateBtn:      { backgroundColor: colors.surfaceContainerHigh, borderRadius: 50, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: colors.outlineVariant },
+  templateBtnText:  { color: colors.onSurface, fontWeight: '800', fontSize: 10, letterSpacing: 1 },
+
+  // Template modal
+  templateCard: {
+    backgroundColor: colors.surfaceContainerHighest, borderRadius: 14, padding: 16,
+    marginBottom: 8, flexDirection: 'row', alignItems: 'center',
+  },
+  templateCardLeft:  { flex: 1, gap: 3 },
+  templateCardLabel: { fontSize: 13, fontWeight: '900', color: colors.onSurface, letterSpacing: 0.5 },
+  templateCardDesc:  { fontSize: 11, color: colors.onSurfaceVariant, lineHeight: 16 },
+  templateCardDays:  { fontSize: 9, color: colors.primaryContainer, fontWeight: '700', letterSpacing: 1, marginTop: 2 },
+  templateCardGoal:  { fontSize: 8, fontWeight: '800', color: colors.tertiary, letterSpacing: 1 },
+
+  // Applying overlay
+  applyingOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', gap: 16, zIndex: 100,
+  },
+  applyingText: { color: colors.primaryContainer, fontWeight: '900', fontSize: 12, letterSpacing: 2 },
 
   planTabsScroll: { flexGrow: 0 },
   planTabs:       { paddingHorizontal: 20, gap: 8, paddingBottom: 4 },
@@ -637,6 +808,7 @@ const s = StyleSheet.create({
   modalSheet:   { backgroundColor: colors.surfaceContainerHigh, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40 },
   sheetHandle:  { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.outlineVariant, alignSelf: 'center', marginBottom: 20 },
   modalTitle:   { fontSize: 24, fontWeight: '900', color: colors.onSurface, letterSpacing: -0.5, marginBottom: 4 },
+  modalSubtitle:{ fontSize: 9, color: colors.onSurfaceVariant, letterSpacing: 2, marginBottom: 16 },
   inputLabel:   { fontSize: 9, fontWeight: '700', color: colors.onSurfaceVariant, letterSpacing: 2, marginBottom: 8, marginTop: 16 },
   textInput:    { backgroundColor: colors.surfaceContainerHighest, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, color: colors.onSurface, fontSize: 15 } as any,
 

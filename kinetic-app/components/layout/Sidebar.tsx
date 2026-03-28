@@ -7,7 +7,6 @@ const navItems = [
   { label: "MUSCLE SELECTOR", href: "/(app)/muscle-selector", icon: "◉" },
   { label: "WORKOUT BUILDER", href: "/(app)/workout-builder", icon: "◇" },
   { label: "PROGRESS",        href: "/(app)/progress",        icon: "▲" },
-  { label: "AI ADVISOR",      href: "/(app)/ai-advisor",      icon: "◎" },
   { label: "PROFILE",         href: "/(app)/profile",         icon: "◯" },
 ];
 
