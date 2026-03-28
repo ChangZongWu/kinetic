@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -412,6 +411,9 @@ export default function Progress() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState(false);
+  const [infoModal, setInfoModal] = useState<{ title: string; body: string } | null>(null);
 
   // Modal: flat map of exerciseId → array of {reps, weight} per set
   const [setInputs, setSetInputs] = useState<Record<string, { reps: string; weight: string }[]>>({});
@@ -442,7 +444,7 @@ export default function Progress() {
   function openModal() {
     const activePlan = plans[0] ?? null;
     if (!activePlan) {
-      Alert.alert('No Plan', 'Create a workout plan first in the Workout Builder.');
+      setInfoModal({ title: 'NO PLAN', body: 'Create a workout plan first in the Workout Builder.' });
       return;
     }
 
@@ -509,7 +511,7 @@ export default function Progress() {
     }
 
     if (sets.length === 0) {
-      Alert.alert('No Sets', 'Enter at least one set before saving.');
+      setInfoModal({ title: 'NO SETS', body: 'Enter at least one set before saving.' });
       return;
     }
 
@@ -526,25 +528,18 @@ export default function Progress() {
       setLogs(prev => [newLog, ...prev]);
       setShowModal(false);
     } catch {
-      Alert.alert('Error', 'Could not save workout. Please try again.');
+      setSaveError(true);
     } finally {
       setSaving(false);
     }
   }
 
-  async function deleteLog(logId: string) {
-    Alert.alert('Delete Workout', 'Remove this log from your history?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          const headers = await getAuthHeaders();
-          const res = await fetch(`${API_URL}/logs/${logId}`, { method: 'DELETE', headers });
-          if (res.ok) setLogs(prev => prev.filter(l => l.id !== logId));
-        },
-      },
-    ]);
+  async function confirmDeleteLog() {
+    if (!deleteTargetId) return;
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${API_URL}/logs/${deleteTargetId}`, { method: 'DELETE', headers });
+    if (res.ok) setLogs(prev => prev.filter(l => l.id !== deleteTargetId));
+    setDeleteTargetId(null);
   }
 
   // ── Stats ──────────────────────────────────────────────────────────────────
@@ -691,7 +686,7 @@ export default function Progress() {
                       <Text style={styles.logPlan}>{log.workout_plans.name.toUpperCase()}</Text>
                     )}
                   </View>
-                  <TouchableOpacity onPress={() => deleteLog(log.id)} style={styles.deleteBtn}>
+                  <TouchableOpacity onPress={() => setDeleteTargetId(log.id)} style={styles.deleteBtn}>
                     <Text style={styles.deleteBtnText}>✕</Text>
                   </TouchableOpacity>
                 </View>
@@ -811,6 +806,48 @@ export default function Progress() {
             <View style={{ height: 20 }} />
           </ScrollView>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Delete confirmation modal */}
+      <Modal visible={!!deleteTargetId} transparent animationType="fade" onRequestClose={() => setDeleteTargetId(null)}>
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmBox}>
+            <Text style={styles.confirmTitle}>DELETE WORKOUT</Text>
+            <Text style={styles.confirmBody}>Remove this log from your history? This cannot be undone.</Text>
+            <TouchableOpacity style={styles.confirmDeleteBtn} onPress={confirmDeleteLog}>
+              <Text style={styles.confirmDeleteTxt}>YES, DELETE</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.confirmCancelBtn} onPress={() => setDeleteTargetId(null)}>
+              <Text style={styles.confirmCancelTxt}>CANCEL</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Save error modal */}
+      <Modal visible={saveError} transparent animationType="fade" onRequestClose={() => setSaveError(false)}>
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmBox}>
+            <Text style={styles.confirmTitle}>SAVE FAILED</Text>
+            <Text style={styles.confirmBody}>Could not save workout. Please try again.</Text>
+            <TouchableOpacity style={styles.confirmDeleteBtn} onPress={() => setSaveError(false)}>
+              <Text style={styles.confirmDeleteTxt}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Info modal (no plan / no sets) */}
+      <Modal visible={!!infoModal} transparent animationType="fade" onRequestClose={() => setInfoModal(null)}>
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmBox}>
+            <Text style={styles.confirmTitle}>{infoModal?.title}</Text>
+            <Text style={styles.confirmBody}>{infoModal?.body}</Text>
+            <TouchableOpacity style={styles.confirmDeleteBtn} onPress={() => setInfoModal(null)}>
+              <Text style={styles.confirmDeleteTxt}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -945,4 +982,14 @@ const styles = StyleSheet.create({
   },
   saveBtnDisabled: { backgroundColor: colors.surfaceContainerHigh },
   saveBtnText: { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: 12, letterSpacing: 1.5 },
+
+  // Confirm / error modals
+  confirmOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 32 },
+  confirmBox: { backgroundColor: colors.surfaceContainerHigh, borderRadius: 24, padding: 28, width: '100%', maxWidth: 360, gap: 8 },
+  confirmTitle: { fontSize: 18, fontWeight: '900', color: colors.onSurface, letterSpacing: -0.5, marginBottom: 4 },
+  confirmBody: { fontSize: 14, color: colors.onSurfaceVariant, lineHeight: 20, marginBottom: 8 },
+  confirmDeleteBtn: { backgroundColor: colors.secondary, borderRadius: 50, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
+  confirmDeleteTxt: { color: '#fff', fontWeight: '900', fontSize: 12, letterSpacing: 1.5 },
+  confirmCancelBtn: { paddingVertical: 14, alignItems: 'center' },
+  confirmCancelTxt: { color: colors.onSurfaceVariant, fontWeight: '700', fontSize: 12, letterSpacing: 1 },
 });
