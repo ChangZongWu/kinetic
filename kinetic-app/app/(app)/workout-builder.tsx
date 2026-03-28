@@ -453,7 +453,9 @@ export default function WorkoutBuilder() {
               onPress={() => { setRenamingPlanId(activePlan.id); setRenameText(activePlan.name); }}
             >
               <Text style={s.planActionsLabel}>{activePlan.plan_sessions.length} exercises total</Text>
-              <Text style={s.renameIcon}>✎</Text>
+              <View style={s.renameBadge}>
+                <Text style={s.renameBadgeText}>✎ RENAME</Text>
+              </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => deletePlan(activePlan.id)} style={s.deletePlanBtn}>
               <Text style={s.deletePlanBtnText}>DELETE PLAN</Text>
@@ -531,7 +533,7 @@ export default function WorkoutBuilder() {
                             <Text style={s.setsColLbl}>REPS</Text>
                             <View style={{ width: 20 }} />
                             <Text style={s.setsColLbl}>WEIGHT (KG)</Text>
-                            <View style={{ width: 28 }} />
+                            <Text style={s.setsColLblDel}>DEL</Text>
                           </View>
                           {sets.map((set, idx) => {
                             const vals = setInputs[session.id]?.[set.id] ?? { reps: '', weight: '' };
@@ -550,7 +552,7 @@ export default function WorkoutBuilder() {
                                   placeholderTextColor={colors.outlineVariant}
                                   selectTextOnFocus
                                 />
-                                <Text style={s.setX}>×</Text>
+                                <Text style={s.setX}>·</Text>
                                 <TextInput
                                   style={s.setInput}
                                   value={vals.weight}
@@ -749,7 +751,8 @@ const s = StyleSheet.create({
   planActions:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 8 },
   renamePlanRow:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
   planActionsLabel:  { fontSize: 11, color: colors.onSurfaceVariant },
-  renameIcon:        { fontSize: 13, color: colors.primaryContainer },
+  renameBadge:     { backgroundColor: colors.primaryContainer + '22', borderRadius: 50, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: colors.primaryContainer + '44' },
+  renameBadgeText: { fontSize: 9, fontWeight: '800', color: colors.primaryContainer, letterSpacing: 1 },
   deletePlanBtn:     { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: colors.surfaceContainer },
   deletePlanBtnText: { fontSize: 9, color: colors.secondary, fontWeight: '700', letterSpacing: 1 },
 
@@ -786,6 +789,7 @@ const s = StyleSheet.create({
   setsBlock:     { gap: 4 },
   setsColHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, paddingHorizontal: 2 },
   setsColLbl:    { flex: 1, fontSize: 8, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1.5, textAlign: 'center' },
+  setsColLblDel: { width: 28, fontSize: 7, fontWeight: '700', color: colors.secondary + 'aa', letterSpacing: 1, textAlign: 'center' },
   setNumCol:     { width: 28, alignItems: 'center' },
   setNum:        { fontSize: 10, fontWeight: '800', color: colors.onSurfaceVariant },
 
@@ -796,7 +800,7 @@ const s = StyleSheet.create({
     color: colors.onSurface, fontSize: 15, fontWeight: '700',
     textAlign: 'center', borderWidth: 1, borderColor: colors.outlineVariant,
   } as any,
-  setX:          { fontSize: 14, color: colors.onSurfaceVariant, fontWeight: '700' },
+  setX:          { fontSize: 16, color: colors.outlineVariant, fontWeight: '400' },
   removeSetBtn:  { width: 28, height: 28, borderRadius: 8, backgroundColor: colors.surfaceContainerHigh, alignItems: 'center', justifyContent: 'center' },
   removeSetBtnText: { fontSize: 16, color: colors.secondary, lineHeight: 20 },
 

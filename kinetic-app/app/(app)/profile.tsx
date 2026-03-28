@@ -236,7 +236,9 @@ export default function ProfileScreen() {
               style={[s.unitChip, units === u && s.unitChipOn]}
               onPress={() => setUnits(u)}
             >
-              <Text style={[s.chipTxt, units === u && s.chipTxtOn]}>{u === 'metric' ? '⚖ METRIC (KG/CM)' : '⚖ IMPERIAL (LBS/IN)'}</Text>
+              <Text style={[s.chipTxt, units === u && s.chipTxtOn]}>
+                {units === u ? '✓ ' : ''}{u === 'metric' ? 'METRIC (KG/CM)' : 'IMPERIAL (LBS/IN)'}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>

@@ -42,8 +42,8 @@ export default function Sidebar() {
         })}
       </View>
 
-      <TouchableOpacity style={styles.startBtn} onPress={() => router.push('/(app)/workout-builder')}>
-        <Text style={styles.startBtnText}>&#x25B6;  START BUILDER</Text>
+      <TouchableOpacity style={styles.startBtn} onPress={() => router.push('/(app)/active-workout' as any)}>
+        <Text style={styles.startBtnText}>&#x25B6;  START WORKOUT</Text>
       </TouchableOpacity>
     </View>
   );

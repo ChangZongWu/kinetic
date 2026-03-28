@@ -116,41 +116,59 @@ const CHART_H = 72;
 
 function WeeklyChart({ volumes, todayIdx }: { volumes: number[]; todayIdx: number }) {
   const max = Math.max(...volumes, 1);
+  const weekTotal = volumes.reduce((s, v) => s + v, 0);
+  const fmtKg = (v: number) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : `${Math.round(v)}`;
   return (
-    <View style={cs.row}>
-      {volumes.map((vol, i) => {
-        const barH = vol > 0 ? Math.max((vol / max) * CHART_H, 8) : 0;
-        const isToday = i === todayIdx;
-        return (
-          <View key={i} style={cs.col}>
-            <View style={[cs.barBg, { height: CHART_H }]}>
-              {barH > 0 && (
-                <View style={[
-                  cs.barFill, { height: barH },
-                  isToday ? cs.barActive : cs.barDim,
-                ]} />
+    <View>
+      <View style={cs.chartMeta}>
+        <Text style={cs.chartMetaLabel}>THIS WEEK</Text>
+        <Text style={cs.chartMetaVal}>{weekTotal > 0 ? `${fmtKg(weekTotal)} kg` : '—'}</Text>
+      </View>
+      <View style={cs.row}>
+        {volumes.map((vol, i) => {
+          const barH = vol > 0 ? Math.max((vol / max) * CHART_H, 8) : 0;
+          const isToday = i === todayIdx;
+          return (
+            <View key={i} style={cs.col}>
+              {vol > 0 && (
+                <Text style={[cs.barVal, isToday && cs.barValActive]}>
+                  {fmtKg(vol)}
+                </Text>
               )}
+              <View style={[cs.barBg, { height: CHART_H }]}>
+                {barH > 0 && (
+                  <View style={[
+                    cs.barFill, { height: barH },
+                    isToday ? cs.barActive : cs.barDim,
+                  ]} />
+                )}
+              </View>
+              <Text style={[cs.lbl, isToday && cs.lblActive]}>{DAY_LBLS[i]}</Text>
             </View>
-            <Text style={[cs.lbl, isToday && cs.lblActive]}>{DAY_LBLS[i]}</Text>
-          </View>
-        );
-      })}
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const cs = StyleSheet.create({
+  chartMeta:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  chartMetaLabel: { fontSize: 8, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 2 },
+  chartMetaVal:   { fontSize: 13, fontWeight: '900', color: colors.primaryContainer },
   row:   { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
-  col:   { flex: 1, alignItems: 'center', gap: 6 },
+  col:   { flex: 1, alignItems: 'center', gap: 4 },
   barBg: {
     width: '100%', backgroundColor: colors.surfaceContainerHigh,
     borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden',
   },
-  barFill:  { width: '100%', borderRadius: 6 },
-  barActive:{ backgroundColor: colors.primaryContainer },
-  barDim:   { backgroundColor: colors.surfaceContainerHighest },
-  lbl:      { fontSize: 7, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.5 },
-  lblActive:{ color: colors.primaryContainer },
+  barFill:     { width: '100%', borderRadius: 6 },
+  barActive:   { backgroundColor: colors.primaryContainer },
+  barDim:      { backgroundColor: colors.surfaceContainerHighest },
+  barVal:      { fontSize: 6, fontWeight: '800', color: colors.onSurfaceVariant },
+  barValActive:{ color: colors.primaryContainer },
+  lbl:         { fontSize: 7, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.5 },
+  lblActive:   { color: colors.primaryContainer },
 });
 
 // ── Main component ─────────────────────────────────────────────────────────────
@@ -230,6 +248,7 @@ export default function Dashboard() {
         </View>
         {profile.goal && (
           <View style={styles.goalBadge}>
+            <Text style={styles.goalBadgeLabel}>GOAL</Text>
             <Text style={styles.goalBadgeText}>{profile.goal.replace('_', ' ').toUpperCase()}</Text>
           </View>
         )}
@@ -243,15 +262,15 @@ export default function Dashboard() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.statCard} onPress={() => router.push('/(app)/muscle-selector')} activeOpacity={0.75}>
           <Text style={styles.statNum}>{totalExercises}</Text>
-          <Text style={styles.statLabel}>EXERCISES</Text>
+          <Text style={styles.statLabel}>PLAN EX.</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.statCard} onPress={() => router.push('/(app)/progress')} activeOpacity={0.75}>
           <Text style={styles.statNum}>{streak}</Text>
-          <Text style={styles.statLabel}>STREAK 🔥</Text>
+          <Text style={styles.statLabel}>DAY STREAK 🔥</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.statCard} onPress={() => setPreviewDay(todayDay)} activeOpacity={0.75}>
           <Text style={styles.statNum}>{todayExercises.length}</Text>
-          <Text style={styles.statLabel}>EXERCISES</Text>
+          <Text style={styles.statLabel}>TODAY EX.</Text>
         </TouchableOpacity>
       </View>
 
@@ -286,6 +305,9 @@ export default function Dashboard() {
                       : <Text style={styles.dayCardRest}>—</Text>
                     }
                   </View>
+                  {sessions.length > 0 && (
+                    <Text style={[styles.dayCardExLabel, isToday && styles.dayCardExLabelToday]}>EX</Text>
+                  )}
                   {isToday && <View style={styles.todayIndicator} />}
                 </TouchableOpacity>
               );
@@ -451,9 +473,11 @@ const styles = StyleSheet.create({
   greetingLabel: { fontSize: 9, color: colors.onSurfaceVariant, letterSpacing: 3, marginBottom: 4 },
   greetingName: { fontSize: 32, fontWeight: '900', color: colors.onSurface, letterSpacing: -1 },
   goalBadge: {
-    backgroundColor: colors.primaryContainer + '22', borderRadius: 50,
+    backgroundColor: colors.primaryContainer + '22', borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: colors.primaryContainer + '44',
+    alignItems: 'center', gap: 2,
   },
+  goalBadgeLabel: { color: colors.onSurfaceVariant, fontSize: 7, fontWeight: '700', letterSpacing: 1.5 },
   goalBadgeText: { color: colors.primaryContainer, fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
 
   statsRow: { flexDirection: 'row', gap: 8, marginBottom: 28 },
@@ -490,6 +514,8 @@ const styles = StyleSheet.create({
   dayCardCount: { fontSize: 13, fontWeight: '900', color: colors.onSurface },
   dayCardCountToday: { color: colors.primaryContainer },
   dayCardRest: { fontSize: 11, color: colors.outlineVariant },
+  dayCardExLabel: { fontSize: 6, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1 },
+  dayCardExLabelToday: { color: colors.primaryContainer },
   todayIndicator: {
     position: 'absolute', bottom: 0, left: '50%',
     width: 4, height: 4, borderRadius: 2,

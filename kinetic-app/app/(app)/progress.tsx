@@ -93,6 +93,7 @@ function getVolumeLast6Weeks(logs: WorkoutLog[]): { label: string; volume: numbe
 
 function VolumeChart({ weeks }: { weeks: { label: string; volume: number }[] }) {
   const max = Math.max(...weeks.map(w => w.volume), 1);
+  const fmtKg = (v: number) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : `${Math.round(v)}`;
   return (
     <View>
       <View style={vc.row}>
@@ -102,6 +103,9 @@ function VolumeChart({ weeks }: { weeks: { label: string; volume: number }[] }) 
           const isEmpty = w.volume === 0;
           return (
             <View key={i} style={vc.col}>
+              {w.volume > 0 && (
+                <Text style={[vc.barVal, isNow && vc.barValNow]}>{fmtKg(w.volume)}</Text>
+              )}
               <View style={[vc.barBg, { height: CHART_H }]}>
                 <View style={[
                   vc.barFill,
@@ -117,21 +121,25 @@ function VolumeChart({ weeks }: { weeks: { label: string; volume: number }[] }) 
       </View>
       {/* Zero baseline */}
       <View style={vc.baseline} />
+      <Text style={vc.yAxisNote}>kg volume per week</Text>
     </View>
   );
 }
 
 const vc = StyleSheet.create({
-  row:     { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
-  col:     { flex: 1, alignItems: 'center', gap: 6 },
-  barBg:   { width: '100%', backgroundColor: colors.surfaceContainerHigh, borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden' },
-  barFill: { width: '100%', borderRadius: 6 },
-  barNow:   { backgroundColor: colors.primaryContainer },
-  barPast:  { backgroundColor: colors.surfaceContainerHighest },
-  barEmpty: { backgroundColor: colors.surfaceContainerHigh, opacity: 0.5 },
-  lbl:      { fontSize: 7, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.5 },
-  lblNow:   { color: colors.primaryContainer },
-  baseline: { height: 1, backgroundColor: colors.outlineVariant + '55', marginTop: 2 },
+  row:       { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
+  col:       { flex: 1, alignItems: 'center', gap: 4 },
+  barBg:     { width: '100%', backgroundColor: colors.surfaceContainerHigh, borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden' },
+  barFill:   { width: '100%', borderRadius: 6 },
+  barNow:    { backgroundColor: colors.primaryContainer },
+  barPast:   { backgroundColor: colors.surfaceContainerHighest },
+  barEmpty:  { backgroundColor: colors.surfaceContainerHigh, opacity: 0.5 },
+  barVal:    { fontSize: 6, fontWeight: '800', color: colors.onSurfaceVariant },
+  barValNow: { color: colors.primaryContainer },
+  lbl:       { fontSize: 7, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.5 },
+  lblNow:    { color: colors.primaryContainer },
+  baseline:  { height: 1, backgroundColor: colors.outlineVariant + '55', marginTop: 2 },
+  yAxisNote: { fontSize: 7, color: colors.onSurfaceVariant, marginTop: 6, textAlign: 'right' },
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -366,6 +374,7 @@ function TrainingCalendar({ logs }: { logs: WorkoutLog[] }) {
                 <Text style={[cal.dayNum, trained && cal.trainedNum, isToday && cal.todayNum]}>
                   {day}
                 </Text>
+                {trained && <View style={cal.trainedDot} />}
               </View>
             );
           })}
@@ -384,11 +393,12 @@ const cal = StyleSheet.create({
   row:        { flexDirection: 'row', marginBottom: 4 },
   dayHeader:  { flex: 1, textAlign: 'center', fontSize: 8, fontWeight: '700', color: colors.onSurfaceVariant, letterSpacing: 1 },
   cell:       { flex: 1, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 6 },
-  trainedCell:{ backgroundColor: colors.primaryContainer + '22' },
+  trainedCell:{ backgroundColor: colors.primaryContainer + '28' },
   todayCell:  { borderWidth: 1.5, borderColor: colors.primaryContainer },
   dayNum:     { fontSize: 11, color: colors.onSurfaceVariant },
   trainedNum: { color: colors.primaryContainer, fontWeight: '800' },
   todayNum:   { color: colors.primaryContainer, fontWeight: '900' },
+  trainedDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primaryContainer, marginTop: 1 },
   legend:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   legendDot:  { width: 8, height: 8, borderRadius: 4 },
   legendText: { fontSize: 9, color: colors.onSurfaceVariant },
@@ -588,18 +598,20 @@ export default function Progress() {
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.statNum}>{totalWorkouts}</Text>
-            <Text style={styles.statLabel}>TOTAL</Text>
+            <Text style={styles.statLabel}>ALL TIME</Text>
+            <Text style={styles.statUnit}>workouts</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNum}>{thisWeek}</Text>
             <Text style={styles.statLabel}>THIS WEEK</Text>
+            <Text style={styles.statUnit}>workouts</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNum}>
               {fmtVolume(totalVolume)}
-              <Text style={styles.statUnit}>kg</Text>
             </Text>
-            <Text style={styles.statLabel}>VOLUME</Text>
+            <Text style={styles.statLabel}>TOTAL VOLUME</Text>
+            <Text style={styles.statUnit}>kg lifted</Text>
           </View>
         </View>
 
@@ -830,7 +842,7 @@ const styles = StyleSheet.create({
     borderRadius: 16, padding: 16, alignItems: 'center', gap: 4,
   },
   statNum: { fontSize: 26, fontWeight: '900', color: colors.primaryContainer },
-  statUnit: { fontSize: 14, fontWeight: '600' },
+  statUnit: { fontSize: 8, fontWeight: '600', color: colors.onSurfaceVariant },
   statLabel: { fontSize: 8, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 2 },
 
   // Section
