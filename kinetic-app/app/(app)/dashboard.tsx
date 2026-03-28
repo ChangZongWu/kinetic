@@ -234,8 +234,9 @@ export default function Dashboard() {
         const setsMap: Record<string, { reps: number | null; weight_kg: number | null }[]> = {};
         await Promise.all(
           activePlan.plan_sessions.map(async s => {
+            // Use activePlan.id — s.plan_id may not be in API response
             const res = await fetch(
-              `${API_URL}/plans/${s.plan_id}/sessions/${s.id}/sets`,
+              `${API_URL}/plans/${activePlan.id}/sessions/${s.id}/sets`,
               { headers }
             );
             setsMap[s.id] = res.ok ? await res.json() : [];

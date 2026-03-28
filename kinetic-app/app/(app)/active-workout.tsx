@@ -167,8 +167,9 @@ export default function ActiveWorkout() {
       const sessionSetsMap: Record<string, SessionSet[]> = {};
       await Promise.all(
         useSessions.map(async s => {
+          // Use target.id — s.plan_id may not be in API response
           const res = await fetch(
-            `${API_URL}/plans/${s.plan_id}/sessions/${s.id}/sets`,
+            `${API_URL}/plans/${target.id}/sessions/${s.id}/sets`,
             { headers }
           );
           sessionSetsMap[s.id] = res.ok ? await res.json() : [];
