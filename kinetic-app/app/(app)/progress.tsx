@@ -94,21 +94,29 @@ function getVolumeLast6Weeks(logs: WorkoutLog[]): { label: string; volume: numbe
 function VolumeChart({ weeks }: { weeks: { label: string; volume: number }[] }) {
   const max = Math.max(...weeks.map(w => w.volume), 1);
   return (
-    <View style={vc.row}>
-      {weeks.map((w, i) => {
-        const barH = w.volume > 0 ? Math.max((w.volume / max) * CHART_H, 8) : 0;
-        const isNow = i === weeks.length - 1;
-        return (
-          <View key={i} style={vc.col}>
-            <View style={[vc.barBg, { height: CHART_H }]}>
-              {barH > 0 && (
-                <View style={[vc.barFill, { height: barH }, isNow ? vc.barNow : vc.barPast]} />
-              )}
+    <View>
+      <View style={vc.row}>
+        {weeks.map((w, i) => {
+          const barH = w.volume > 0 ? Math.max((w.volume / max) * CHART_H, 8) : 4;
+          const isNow = i === weeks.length - 1;
+          const isEmpty = w.volume === 0;
+          return (
+            <View key={i} style={vc.col}>
+              <View style={[vc.barBg, { height: CHART_H }]}>
+                <View style={[
+                  vc.barFill,
+                  { height: barH },
+                  isNow ? vc.barNow : vc.barPast,
+                  isEmpty && vc.barEmpty,
+                ]} />
+              </View>
+              <Text style={[vc.lbl, isNow && vc.lblNow]}>{w.label}</Text>
             </View>
-            <Text style={[vc.lbl, isNow && vc.lblNow]}>{w.label}</Text>
-          </View>
-        );
-      })}
+          );
+        })}
+      </View>
+      {/* Zero baseline */}
+      <View style={vc.baseline} />
     </View>
   );
 }
@@ -118,10 +126,12 @@ const vc = StyleSheet.create({
   col:     { flex: 1, alignItems: 'center', gap: 6 },
   barBg:   { width: '100%', backgroundColor: colors.surfaceContainerHigh, borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden' },
   barFill: { width: '100%', borderRadius: 6 },
-  barNow:  { backgroundColor: colors.primaryContainer },
-  barPast: { backgroundColor: colors.surfaceContainerHighest },
-  lbl:     { fontSize: 7, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.5 },
-  lblNow:  { color: colors.primaryContainer },
+  barNow:   { backgroundColor: colors.primaryContainer },
+  barPast:  { backgroundColor: colors.surfaceContainerHighest },
+  barEmpty: { backgroundColor: colors.surfaceContainerHigh, opacity: 0.5 },
+  lbl:      { fontSize: 7, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.5 },
+  lblNow:   { color: colors.primaryContainer },
+  baseline: { height: 1, backgroundColor: colors.outlineVariant + '55', marginTop: 2 },
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
