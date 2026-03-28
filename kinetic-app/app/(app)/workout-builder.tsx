@@ -138,6 +138,7 @@ export default function WorkoutBuilder() {
   const [newPlanGoal,        setNewPlanGoal]         = useState<string | null>(null);
   const [renamingPlanId,     setRenamingPlanId]      = useState<string | null>(null);
   const [renameText,         setRenameText]          = useState('');
+  const [builderUnits,       setBuilderUnits]        = useState<'metric' | 'imperial'>('metric');
   const addExerciseHandled = useRef<string | null>(null);
 
   // Inline sets state
@@ -156,11 +157,18 @@ export default function WorkoutBuilder() {
     setLoading(true);
     try {
       const headers = await getAuthHeaders();
-      const res = await fetch(`${API_URL}/plans`, { headers });
+      const [res, profileRes] = await Promise.all([
+        fetch(`${API_URL}/plans`, { headers }),
+        fetch(`${API_URL}/profile`, { headers }),
+      ]);
       if (!res.ok) throw new Error();
       const data: Plan[] = await res.json();
       setPlans(data);
       if (data.length > 0 && !activePlanId) setActivePlanId(data[0].id);
+      if (profileRes.ok) {
+        const p = await profileRes.json();
+        if (p.units === 'imperial' || p.units === 'metric') setBuilderUnits(p.units);
+      }
     } catch {}
     finally { setLoading(false); }
   }, []);
@@ -522,7 +530,9 @@ export default function WorkoutBuilder() {
 
                   {/* Sets — inline, always visible */}
                   {daySetsLoading && sets.length === 0 ? (
-                    <ActivityIndicator size="small" color={colors.primaryContainer} style={{ marginVertical: 8 }} />
+                    <Text style={s.loadingHint}>
+                      {session.exercises.sets_suggestion ?? 3} sets × {session.exercises.reps_suggestion ?? '10'} reps
+                    </Text>
                   ) : (
                     <>
                       {sets.length > 0 && (
@@ -532,7 +542,7 @@ export default function WorkoutBuilder() {
                             <View style={s.setNumCol} />
                             <Text style={s.setsColLbl}>REPS</Text>
                             <View style={{ width: 20 }} />
-                            <Text style={s.setsColLbl}>WEIGHT (KG)</Text>
+                            <Text style={s.setsColLbl}>WEIGHT ({builderUnits === 'imperial' ? 'LBS' : 'KG'})</Text>
                             <Text style={s.setsColLblDel}>DEL</Text>
                           </View>
                           {sets.map((set, idx) => {
@@ -806,6 +816,7 @@ const s = StyleSheet.create({
 
   addSetBtn:     { backgroundColor: colors.surfaceContainerHigh, borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: colors.outlineVariant },
   addSetBtnText: { fontSize: 9, fontWeight: '800', color: colors.primaryContainer, letterSpacing: 1.5 },
+  loadingHint: { fontSize: 11, color: colors.onSurfaceVariant, paddingVertical: 8, fontWeight: '600' },
 
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'flex-end' },

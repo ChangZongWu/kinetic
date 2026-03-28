@@ -91,19 +91,34 @@ function getVolumeLast6Weeks(logs: WorkoutLog[]): { label: string; volume: numbe
 }
 
 function VolumeChart({ weeks }: { weeks: { label: string; volume: number }[] }) {
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const max = Math.max(...weeks.map(w => w.volume), 1);
-  const fmtKg = (v: number) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : `${Math.round(v)}`;
+  const fmtKg = (v: number) => v >= 1000 ? `${(v/1000).toFixed(1)}k kg` : `${Math.round(v)} kg`;
   return (
     <View>
+      {/* Tooltip */}
+      {selectedIdx !== null && weeks[selectedIdx].volume > 0 && (
+        <View style={vc.tooltip}>
+          <Text style={vc.tooltipLabel}>{weeks[selectedIdx].label}</Text>
+          <Text style={vc.tooltipValue}>{fmtKg(weeks[selectedIdx].volume)}</Text>
+        </View>
+      )}
       <View style={vc.row}>
         {weeks.map((w, i) => {
           const barH = w.volume > 0 ? Math.max((w.volume / max) * CHART_H, 8) : 4;
           const isNow = i === weeks.length - 1;
           const isEmpty = w.volume === 0;
+          const isSelected = selectedIdx === i;
           return (
-            <View key={i} style={vc.col}>
+            <TouchableOpacity
+              key={i}
+              style={vc.col}
+              onPress={() => setSelectedIdx(isSelected ? null : i)}
+              activeOpacity={0.7}
+              disabled={isEmpty}
+            >
               {w.volume > 0 && (
-                <Text style={[vc.barVal, isNow && vc.barValNow]}>{fmtKg(w.volume)}</Text>
+                <Text style={[vc.barVal, isNow && vc.barValNow]}>{w.volume >= 1000 ? `${(w.volume/1000).toFixed(1)}k` : `${Math.round(w.volume)}`}</Text>
               )}
               <View style={[vc.barBg, { height: CHART_H }]}>
                 <View style={[
@@ -111,16 +126,17 @@ function VolumeChart({ weeks }: { weeks: { label: string; volume: number }[] }) 
                   { height: barH },
                   isNow ? vc.barNow : vc.barPast,
                   isEmpty && vc.barEmpty,
+                  isSelected && vc.barSelected,
                 ]} />
               </View>
-              <Text style={[vc.lbl, isNow && vc.lblNow]}>{w.label}</Text>
-            </View>
+              <Text style={[vc.lbl, isNow && vc.lblNow, isSelected && vc.lblSelected]}>{w.label}</Text>
+            </TouchableOpacity>
           );
         })}
       </View>
       {/* Zero baseline */}
       <View style={vc.baseline} />
-      <Text style={vc.yAxisNote}>kg volume per week</Text>
+      <Text style={vc.yAxisNote}>tap a bar for details · kg volume per week</Text>
     </View>
   );
 }
@@ -139,6 +155,16 @@ const vc = StyleSheet.create({
   lblNow:    { color: colors.primaryContainer },
   baseline:  { height: 1, backgroundColor: colors.outlineVariant + '55', marginTop: 2 },
   yAxisNote: { fontSize: 7, color: colors.onSurfaceVariant, marginTop: 6, textAlign: 'right' },
+  barSelected: { backgroundColor: colors.tertiary },
+  lblSelected: { color: colors.tertiary, fontWeight: '900' },
+  tooltip: {
+    backgroundColor: colors.surfaceContainerHighest,
+    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8,
+    alignSelf: 'center', marginBottom: 10, alignItems: 'center',
+    borderWidth: 1, borderColor: colors.primaryContainer + '55',
+  },
+  tooltipLabel: { fontSize: 9, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 1 },
+  tooltipValue: { fontSize: 16, fontWeight: '900', color: colors.primaryContainer },
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -335,8 +361,21 @@ const sc = StyleSheet.create({
 
 // ── Calendar ──────────────────────────────────────────────────────────────────
 
-function TrainingCalendar({ logs }: { logs: WorkoutLog[] }) {
-  const trainedDates = new Set(logs.map(l => l.logged_at.slice(0, 10)));
+function TrainingCalendar({
+  logs,
+  onDayPress,
+}: {
+  logs: WorkoutLog[];
+  onDayPress: (dateStr: string) => void;
+}) {
+  // Map date string → log for quick lookup
+  const dateToLog: Record<string, WorkoutLog> = {};
+  for (const l of logs) {
+    const d = l.logged_at.slice(0, 10);
+    if (!dateToLog[d]) dateToLog[d] = l;
+  }
+  const trainedDates = new Set(Object.keys(dateToLog));
+
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();
@@ -368,20 +407,26 @@ function TrainingCalendar({ logs }: { logs: WorkoutLog[] }) {
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const trained = trainedDates.has(dateStr);
             const isToday = dateStr === todayStr;
+            const CellWrapper = trained ? TouchableOpacity : View;
             return (
-              <View key={di} style={[cal.cell, trained && cal.trainedCell, isToday && cal.todayCell]}>
+              <CellWrapper
+                key={di}
+                style={[cal.cell, trained && cal.trainedCell, isToday && cal.todayCell]}
+                onPress={trained ? () => onDayPress(dateStr) : undefined}
+                activeOpacity={0.7}
+              >
                 <Text style={[cal.dayNum, trained && cal.trainedNum, isToday && cal.todayNum]}>
                   {day}
                 </Text>
                 {trained && <View style={cal.trainedDot} />}
-              </View>
+              </CellWrapper>
             );
           })}
         </View>
       ))}
       <View style={cal.legend}>
         <View style={[cal.legendDot, { backgroundColor: colors.primaryContainer }]} />
-        <Text style={cal.legendText}>Training day</Text>
+        <Text style={cal.legendText}>Training day · tap to view</Text>
       </View>
     </View>
   );
@@ -414,6 +459,14 @@ export default function Progress() {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState(false);
   const [infoModal, setInfoModal] = useState<{ title: string; body: string } | null>(null);
+  const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
+  const [calDayLog, setCalDayLog] = useState<WorkoutLog | null>(null);
+
+  const weightUnit = units === 'imperial' ? 'lbs' : 'kg';
+  const KG_TO_LBS = 2.20462;
+  function toStorageKg(val: number): number {
+    return units === 'imperial' ? Math.round((val / KG_TO_LBS) * 100) / 100 : val;
+  }
 
   // Modal: flat map of exerciseId → array of {reps, weight} per set
   const [setInputs, setSetInputs] = useState<Record<string, { reps: string; weight: string }[]>>({});
@@ -430,12 +483,17 @@ export default function Progress() {
     setLoading(true);
     try {
       const headers = await getAuthHeaders();
-      const [logsRes, plansRes] = await Promise.all([
+      const [logsRes, plansRes, profileRes] = await Promise.all([
         fetch(`${API_URL}/logs`, { headers }),
         fetch(`${API_URL}/plans`, { headers }),
+        fetch(`${API_URL}/profile`, { headers }),
       ]);
       if (logsRes.ok) setLogs(await logsRes.json());
       if (plansRes.ok) setPlans(await plansRes.json());
+      if (profileRes.ok) {
+        const p = await profileRes.json();
+        if (p.units === 'imperial' || p.units === 'metric') setUnits(p.units);
+      }
     } finally {
       setLoading(false);
     }
@@ -466,8 +524,9 @@ export default function Progress() {
     const inputs: Record<string, { reps: string; weight: string }[]> = {};
     for (const ex of exercises) {
       const count = ex.sets_suggestion ?? 3;
+      const defaultReps = ex.reps_suggestion?.split('-')[0]?.trim() ?? '';
       inputs[ex.id] = Array.from({ length: count }, () => ({
-        reps: ex.reps_suggestion ?? '',
+        reps: defaultReps,
         weight: '',
       }));
     }
@@ -498,13 +557,14 @@ export default function Progress() {
     for (const [exerciseId, setsArr] of Object.entries(setInputs)) {
       setsArr.forEach((s, idx) => {
         const reps = parseInt(s.reps, 10);
-        const weight = parseFloat(s.weight);
-        if (!isNaN(reps) || !isNaN(weight)) {
+        const weightInput = parseFloat(s.weight);
+        const weightKg = isNaN(weightInput) ? null : toStorageKg(weightInput);
+        if (!isNaN(reps) || weightKg !== null) {
           sets.push({
             exercise_id: exerciseId,
             set_number: idx + 1,
             reps: isNaN(reps) ? null : reps,
-            weight_kg: isNaN(weight) ? null : weight,
+            weight_kg: weightKg,
           });
         }
       });
@@ -627,7 +687,13 @@ export default function Progress() {
         {/* Training Calendar */}
         <Text style={styles.sectionLabel}>TRAINING CALENDAR</Text>
         <View style={styles.chartCard}>
-          <TrainingCalendar logs={logs} />
+          <TrainingCalendar
+            logs={logs}
+            onDayPress={dateStr => {
+              const log = logs.find(l => l.logged_at.slice(0, 10) === dateStr) ?? null;
+              setCalDayLog(log);
+            }}
+          />
         </View>
 
         {/* Strength Progress */}
@@ -723,6 +789,64 @@ export default function Progress() {
         <View style={{ height: 32 }} />
       </ScrollView>
 
+      {/* Calendar Day Detail Modal */}
+      <Modal
+        visible={!!calDayLog}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCalDayLog(null)}
+      >
+        <View style={styles.confirmOverlay}>
+          <View style={[styles.confirmBox, { maxHeight: '80%' }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <View>
+                <Text style={styles.confirmTitle}>
+                  {calDayLog ? new Date(calDayLog.logged_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : ''}
+                </Text>
+                {calDayLog?.workout_plans && (
+                  <Text style={{ fontSize: 9, color: colors.primaryContainer, letterSpacing: 1.5, marginTop: 2 }}>
+                    {calDayLog.workout_plans.name.toUpperCase()}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity onPress={() => setCalDayLog(null)}>
+                <Text style={{ fontSize: 20, color: colors.onSurfaceVariant }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {calDayLog && getExerciseSummary(calDayLog.log_sets ?? []).map((ex, i) => (
+                <View key={i} style={[styles.logExRow, i > 0 && styles.logExRowBorder]}>
+                  <View style={styles.logExLeft}>
+                    <Text style={styles.logExName}>{ex.name}</Text>
+                    {ex.muscle ? <Text style={styles.logExMuscle}>{ex.muscle}</Text> : null}
+                  </View>
+                  <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                    <Text style={styles.logExSets}>{ex.sets}×{ex.avgReps}</Text>
+                    {ex.maxWeight > 0 && (
+                      <Text style={{ fontSize: 10, color: colors.onSurfaceVariant }}>
+                        {ex.maxWeight}{weightUnit} max
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+              {calDayLog && (
+                <View style={[styles.logCardFooter, { marginTop: 12 }]}>
+                  <Text style={styles.logFooterStat}>{(calDayLog.log_sets ?? []).length} sets</Text>
+                  {(() => {
+                    const vol = (calDayLog.log_sets ?? []).reduce((s, set) => s + (set.reps ?? 0) * (set.weight_kg ?? 0), 0);
+                    return vol > 0 ? <Text style={styles.logFooterStat}>{Math.round(vol)} kg total</Text> : null;
+                  })()}
+                </View>
+              )}
+            </ScrollView>
+            <TouchableOpacity style={[styles.confirmDeleteBtn, { marginTop: 16 }]} onPress={() => setCalDayLog(null)}>
+              <Text style={styles.confirmDeleteTxt}>CLOSE</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Log Workout Modal */}
       <Modal
         visible={showModal}
@@ -768,7 +892,7 @@ export default function Progress() {
                     </View>
                     <TextInput
                       style={styles.setInput}
-                      placeholder={ex.reps_suggestion ?? 'Reps'}
+                      placeholder="Reps"
                       placeholderTextColor={colors.onSurfaceVariant}
                       keyboardType="numeric"
                       value={setInput.reps}
@@ -785,7 +909,7 @@ export default function Progress() {
                       onChangeText={v => updateSet(ex.id, idx, 'weight', v)}
                       maxLength={6}
                     />
-                    <Text style={styles.setKg}>kg</Text>
+                    <Text style={styles.setKg}>{weightUnit}</Text>
                   </View>
                 ))}
               </View>

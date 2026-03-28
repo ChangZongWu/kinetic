@@ -83,6 +83,16 @@ let _savedBlocks: ExerciseBlock[] | null = null;
 let _savedLastWeights: Record<string, { weight: number; reps: number }> = {};
 let _savedPlan: Plan | null = null;
 let _savedRestDuration = 90;
+let _savedUnits: 'metric' | 'imperial' = 'metric';
+
+// Unit conversion helpers
+const KG_TO_LBS = 2.20462;
+function toDisplayWeight(kg: number, units: 'metric' | 'imperial'): number {
+  return units === 'imperial' ? Math.round(kg * KG_TO_LBS * 10) / 10 : kg;
+}
+function toStorageKg(val: number, units: 'metric' | 'imperial'): number {
+  return units === 'imperial' ? Math.round((val / KG_TO_LBS) * 100) / 100 : val;
+}
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
@@ -95,8 +105,17 @@ export default function ActiveWorkout() {
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);
   const [finished, setFinished]   = useState(false);
-  // Last session weights: exerciseId → { weight, reps }
+  const [units, setUnits]         = useState<'metric' | 'imperial'>(_savedUnits);
+  // Last session weights: exerciseId → { weight, reps } (always in kg)
   const [lastWeights, setLastWeights] = useState<Record<string, { weight: number; reps: number }>>({});
+  // Summary data captured at finish time
+  const [summary, setSummary] = useState<{
+    totalVolume: number;
+    totalDone: number;
+    elapsed: number;
+    prs: string[];
+    exercises: { name: string; sets: string }[];
+  } | null>(null);
 
   // Stopwatch
   const [elapsed, setElapsed]     = useState(0);
@@ -131,6 +150,7 @@ export default function ActiveWorkout() {
       setLastWeights(_savedLastWeights);
       setPlan(_savedPlan);
       setRestDuration(_savedRestDuration);
+      setUnits(_savedUnits);
       elapsedRef.current = Math.floor((Date.now() - (_workoutStartMs ?? Date.now())) / 1000);
       setElapsed(elapsedRef.current);
       setLoading(false);
@@ -201,13 +221,17 @@ export default function ActiveWorkout() {
       setPlan(target);
       setBlocks(exerciseBlocks);
 
-      // Fetch profile for default rest timer
+      // Fetch profile for default rest timer and units
       const profileRes = await fetch(`${API_URL}/profile`, { headers });
       if (profileRes.ok) {
         const p = await profileRes.json();
         if (p.default_rest_timer) {
           _savedRestDuration = p.default_rest_timer;
           setRestDuration(p.default_rest_timer);
+        }
+        if (p.units === 'imperial' || p.units === 'metric') {
+          _savedUnits = p.units;
+          setUnits(p.units);
         }
       }
 
@@ -315,17 +339,59 @@ export default function ActiveWorkout() {
     if (stopwatchRef.current) clearInterval(stopwatchRef.current);
     if (restRef.current)      clearInterval(restRef.current);
 
+    // Capture summary before resetting state
+    const doneSets = blocks.flatMap(b => b.sets.filter(s => s.done));
+    const totalVolumeKg = blocks.reduce((sum, b) =>
+      sum + b.sets.filter(s => s.done).reduce((s2, set) => {
+        const w = toStorageKg(parseFloat(set.weight) || 0, units);
+        const r = parseInt(set.reps, 10) || 0;
+        return s2 + w * r;
+      }, 0), 0);
+    const prNames: string[] = [];
+    for (const b of blocks) {
+      const prev = lastWeights[b.exercise.id];
+      if (prev) {
+        const maxInputWeight = Math.max(0, ...b.sets.filter(s => s.done && parseFloat(s.weight) > 0).map(s => parseFloat(s.weight) || 0));
+        const maxKg = toStorageKg(maxInputWeight, units);
+        if (maxKg > prev.weight) prNames.push(b.exercise.name);
+      }
+    }
+    const exerciseSummary = blocks
+      .filter(b => b.sets.some(s => s.done))
+      .map(b => {
+        const doneSetsForEx = b.sets.filter(s => s.done);
+        const topWeight = Math.max(0, ...doneSetsForEx.map(s => parseFloat(s.weight) || 0));
+        const avgReps = doneSetsForEx.length > 0
+          ? Math.round(doneSetsForEx.reduce((s, st) => s + (parseInt(st.reps, 10) || 0), 0) / doneSetsForEx.length)
+          : 0;
+        const weightLabel = topWeight > 0 ? `${topWeight}${units === 'imperial' ? 'lbs' : 'kg'}` : '';
+        return {
+          name: b.exercise.name,
+          sets: weightLabel
+            ? `${doneSetsForEx.length}×${avgReps} @ ${weightLabel}`
+            : `${doneSetsForEx.length} sets`,
+        };
+      });
+    setSummary({
+      totalVolume: Math.round(totalVolumeKg),
+      totalDone: doneSets.length,
+      elapsed: elapsedRef.current,
+      prs: prNames,
+      exercises: exerciseSummary,
+    });
+
     try {
       const sets: { exercise_id: string; set_number: number; reps: number | null; weight_kg: number | null }[] = [];
       for (const block of blocks) {
         block.sets.forEach((s, idx) => {
           const reps   = parseInt(s.reps, 10);
-          const weight = parseFloat(s.weight);
+          const weightInput = parseFloat(s.weight);
+          const weightKg = isNaN(weightInput) ? null : toStorageKg(weightInput, units);
           sets.push({
             exercise_id: block.exercise.id,
             set_number:  idx + 1,
-            reps:        isNaN(reps)   ? null : reps,
-            weight_kg:   isNaN(weight) ? null : weight,
+            reps:        isNaN(reps) ? null : reps,
+            weight_kg:   weightKg,
           });
         });
       }
@@ -355,21 +421,71 @@ export default function ActiveWorkout() {
     return <View style={s.center}><ActivityIndicator color={colors.primaryContainer} size="large" /></View>;
   }
 
-  if (finished) {
+  if (finished && summary) {
+    const fmtVol = summary.totalVolume >= 1000
+      ? `${(summary.totalVolume / 1000).toFixed(1)}k`
+      : `${summary.totalVolume}`;
     return (
-      <View style={[s.center, { gap: 16, paddingHorizontal: 32 }]}>
-        <Text style={{ fontSize: 56 }}>🏆</Text>
-        <Text style={s.doneTitle}>WORKOUT{'\n'}COMPLETE</Text>
-        <Text style={s.doneSub}>
-          {totalDone} sets · {formatTime(elapsedRef.current)}
-        </Text>
+      <ScrollView contentContainerStyle={s.doneScroll} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={s.doneHeader}>
+          <Text style={{ fontSize: 48 }}>🏆</Text>
+          <Text style={s.doneTitle}>WORKOUT{'\n'}COMPLETE</Text>
+          <Text style={s.doneSub}>{formatTime(summary.elapsed)}</Text>
+        </View>
+
+        {/* Stats row */}
+        <View style={s.doneSummaryRow}>
+          <View style={s.doneStat}>
+            <Text style={s.doneStatNum}>{summary.totalDone}</Text>
+            <Text style={s.doneStatLabel}>SETS DONE</Text>
+          </View>
+          <View style={s.doneStatDiv} />
+          <View style={s.doneStat}>
+            <Text style={s.doneStatNum}>{fmtVol}</Text>
+            <Text style={s.doneStatLabel}>KG VOLUME</Text>
+          </View>
+          {summary.prs.length > 0 && (
+            <>
+              <View style={s.doneStatDiv} />
+              <View style={s.doneStat}>
+                <Text style={s.doneStatNum}>{summary.prs.length}</Text>
+                <Text style={s.doneStatLabel}>NEW PR{summary.prs.length > 1 ? 'S' : ''}</Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* PRs callout */}
+        {summary.prs.length > 0 && (
+          <View style={s.prCallout}>
+            <Text style={s.prCalloutTitle}>🎯 NEW PERSONAL RECORDS</Text>
+            {summary.prs.map(name => (
+              <Text key={name} style={s.prCalloutItem}>· {name}</Text>
+            ))}
+          </View>
+        )}
+
+        {/* Exercise breakdown */}
+        <Text style={s.doneBreakdownLabel}>EXERCISES</Text>
+        <View style={s.doneBreakdownCard}>
+          {summary.exercises.map((ex, i) => (
+            <View key={i} style={[s.doneExRow, i > 0 && s.doneExRowBorder]}>
+              <Text style={s.doneExName}>{ex.name}</Text>
+              <Text style={s.doneExSets}>{ex.sets}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Actions */}
         <TouchableOpacity style={s.doneBtn} onPress={() => router.replace('/(app)/progress')}>
           <Text style={s.doneBtnText}>VIEW PROGRESS →</Text>
         </TouchableOpacity>
         <TouchableOpacity style={s.doneBtnSec} onPress={() => router.replace('/(app)/dashboard')}>
           <Text style={s.doneBtnSecText}>BACK TO DASHBOARD</Text>
         </TouchableOpacity>
-      </View>
+        <View style={{ height: 40 }} />
+      </ScrollView>
     );
   }
 
@@ -437,7 +553,7 @@ export default function ActiveWorkout() {
             {/* Last session reference */}
             {lastWeights[block.exercise.id] && (
               <Text style={s.lastRef}>
-                Last time: {lastWeights[block.exercise.id].weight}kg × {lastWeights[block.exercise.id].reps} reps
+                Last time: {toDisplayWeight(lastWeights[block.exercise.id].weight, units)}{units === 'imperial' ? 'lbs' : 'kg'} × {lastWeights[block.exercise.id].reps} reps
               </Text>
             )}
 
@@ -445,7 +561,7 @@ export default function ActiveWorkout() {
             <View style={s.colHeader}>
               <View style={s.setNumCol} />
               <Text style={s.colLbl}>REPS</Text>
-              <Text style={s.colLbl}>WEIGHT (KG)</Text>
+              <Text style={s.colLbl}>WEIGHT ({units === 'imperial' ? 'LBS' : 'KG'})</Text>
               <View style={s.checkCol} />
             </View>
 
@@ -642,9 +758,25 @@ const s = StyleSheet.create({
   restOptionTextActive: { color: colors.onPrimaryContainer },
 
   // Done screen
-  doneTitle:    { fontSize: 48, fontWeight: '900', color: colors.onSurface, letterSpacing: -2, textAlign: 'center', lineHeight: 50 },
-  doneSub:      { fontSize: 14, color: colors.onSurfaceVariant, textAlign: 'center' },
-  doneBtn:      { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingHorizontal: 32, paddingVertical: 16, marginTop: 16 },
+  doneScroll:   { paddingHorizontal: 24, paddingTop: 48, alignItems: 'center' },
+  doneHeader:   { alignItems: 'center', gap: 8, marginBottom: 32 },
+  doneTitle:    { fontSize: 40, fontWeight: '900', color: colors.onSurface, letterSpacing: -2, textAlign: 'center', lineHeight: 44 },
+  doneSub:      { fontSize: 22, fontWeight: '900', color: colors.primaryContainer, letterSpacing: -0.5 },
+  doneSummaryRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceContainer, borderRadius: 20, padding: 20, width: '100%', marginBottom: 16 },
+  doneStat:     { flex: 1, alignItems: 'center', gap: 4 },
+  doneStatNum:  { fontSize: 28, fontWeight: '900', color: colors.primaryContainer },
+  doneStatLabel:{ fontSize: 8, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1.5 },
+  doneStatDiv:  { width: 1, height: 40, backgroundColor: colors.outlineVariant + '44' },
+  prCallout:    { backgroundColor: colors.primaryContainer + '18', borderRadius: 16, padding: 16, width: '100%', marginBottom: 16, gap: 6, borderWidth: 1, borderColor: colors.primaryContainer + '44' },
+  prCalloutTitle:{ fontSize: 11, fontWeight: '900', color: colors.primaryContainer, letterSpacing: 1 },
+  prCalloutItem: { fontSize: 13, fontWeight: '700', color: colors.onSurface },
+  doneBreakdownLabel: { fontSize: 9, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 3, alignSelf: 'flex-start', marginBottom: 10 },
+  doneBreakdownCard: { backgroundColor: colors.surfaceContainer, borderRadius: 16, width: '100%', marginBottom: 24, overflow: 'hidden' },
+  doneExRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
+  doneExRowBorder: { borderTopWidth: 1, borderTopColor: colors.outlineVariant + '33' },
+  doneExName:   { fontSize: 13, fontWeight: '700', color: colors.onSurface, flex: 1 },
+  doneExSets:   { fontSize: 12, fontWeight: '800', color: colors.primaryContainer },
+  doneBtn:      { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingHorizontal: 32, paddingVertical: 16, marginTop: 8, width: '100%', alignItems: 'center' },
   doneBtnText:  { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: 12, letterSpacing: 1.5 },
   doneBtnSec:   { paddingVertical: 12 },
   doneBtnSecText: { color: colors.onSurfaceVariant, fontWeight: '700', fontSize: 12, letterSpacing: 1 },
