@@ -28,8 +28,14 @@ interface PlanExercise {
 
 interface PlanSession {
   id: string;
+  plan_id: string;
   day_of_week: string;
   exercises: PlanExercise;
+}
+
+interface SessionSet {
+  reps: number | null;
+  weight_kg: number | null;
 }
 
 interface Plan {
@@ -69,6 +75,11 @@ function formatTime(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+// ── Module-level workout session persistence (survives tab navigation) ─────────
+// Stores start timestamp so timer doesn't reset when user switches tabs
+let _workoutStartMs: number | null = null;
+let _loadedKey: string | null = null; // "planId-day" — prevents re-loading blocks on return
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function ActiveWorkout() {
@@ -101,7 +112,19 @@ export default function ActiveWorkout() {
   // ── Load ─────────────────────────────────────────────────────────────────────
 
   useFocusEffect(useCallback(() => {
-    load();
+    const key = `${params.planId ?? 'none'}-${params.day ?? 'today'}`;
+    if (_loadedKey !== key) {
+      // New workout session — reset timer and load blocks fresh
+      _workoutStartMs = Date.now();
+      _loadedKey = key;
+      elapsedRef.current = 0;
+      setElapsed(0);
+      load();
+    } else {
+      // Returning from another tab — restore elapsed from wall clock
+      elapsedRef.current = Math.floor((Date.now() - (_workoutStartMs ?? Date.now())) / 1000);
+      setElapsed(elapsedRef.current);
+    }
     startStopwatch();
     return () => {
       if (stopwatchRef.current) clearInterval(stopwatchRef.current);
@@ -127,18 +150,35 @@ export default function ActiveWorkout() {
       const sessions = target.plan_sessions.filter(s => s.day_of_week === day);
       const useSessions = sessions.length > 0 ? sessions : target.plan_sessions.slice(0, 6);
 
-      // Deduplicate exercises
+      // Fetch actual configured sets for each session in parallel
+      const sessionSetsMap: Record<string, SessionSet[]> = {};
+      await Promise.all(
+        useSessions.map(async s => {
+          const res = await fetch(
+            `${API_URL}/plans/${s.plan_id}/sessions/${s.id}/sets`,
+            { headers }
+          );
+          sessionSetsMap[s.id] = res.ok ? await res.json() : [];
+        })
+      );
+
+      // Deduplicate exercises, using actual configured sets
       const seen = new Set<string>();
       const exerciseBlocks: ExerciseBlock[] = [];
       for (const s of useSessions) {
         if (!seen.has(s.exercises.id)) {
           seen.add(s.exercises.id);
-          const count = s.exercises.sets_suggestion ?? 3;
-          const repsHint = s.exercises.reps_suggestion?.split('-')[0] ?? '10';
-          exerciseBlocks.push({
-            exercise: s.exercises,
-            sets: Array.from({ length: count }, () => ({ reps: repsHint, weight: '', done: false })),
-          });
+          const configuredSets = sessionSetsMap[s.id] ?? [];
+          const fallbackCount = s.exercises.sets_suggestion ?? 3;
+          const fallbackReps = s.exercises.reps_suggestion?.split('-')[0] ?? '10';
+          const sets: WorkoutSet[] = configuredSets.length > 0
+            ? configuredSets.map(cs => ({
+                reps: cs.reps != null ? String(cs.reps) : fallbackReps,
+                weight: cs.weight_kg != null && cs.weight_kg > 0 ? String(cs.weight_kg) : '',
+                done: false,
+              }))
+            : Array.from({ length: fallbackCount }, () => ({ reps: fallbackReps, weight: '', done: false }));
+          exerciseBlocks.push({ exercise: s.exercises, sets });
         }
       }
 
@@ -276,6 +316,9 @@ export default function ActiveWorkout() {
           sets,
         }),
       });
+      // Reset session so next START WORKOUT loads fresh
+      _workoutStartMs = null;
+      _loadedKey = null;
       setFinished(true);
     } catch {
       setSaving(false);
