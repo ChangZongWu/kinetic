@@ -190,11 +190,12 @@ function fmtSetsFor(
 
 export default function Dashboard() {
   const router = useRouter();
-  const [plans,       setPlans]       = useState<Plan[]>([]);
-  const [profile,     setProfile]     = useState<Profile>({});
-  const [logs,        setLogs]        = useState<WorkoutLog[]>([]);
-  const [loading,     setLoading]     = useState(true);
-  const [previewDay,  setPreviewDay]  = useState<string | null>(null);
+  const [plans,         setPlans]         = useState<Plan[]>([]);
+  const [profile,       setProfile]       = useState<Profile>({});
+  const [logs,          setLogs]          = useState<WorkoutLog[]>([]);
+  const [loading,       setLoading]       = useState(true);
+  const [previewDay,    setPreviewDay]    = useState<string | null>(null);
+  const [activePlanId,  setActivePlanId]  = useState<string | null>(null);
   // sessionId → array of configured sets (from workout builder)
   const [sessionSets, setSessionSets] = useState<Record<string, { reps: number | null; weight_kg: number | null }[]>>({});
 
@@ -206,6 +207,28 @@ export default function Dashboard() {
       loadData();
     }, [])
   );
+
+  async function fetchSessionSets(plan: Plan, headers: Record<string, string>) {
+    if (!plan || plan.plan_sessions.length === 0) return;
+    const setsMap: Record<string, { reps: number | null; weight_kg: number | null }[]> = {};
+    await Promise.all(
+      plan.plan_sessions.map(async s => {
+        const res = await fetch(
+          `${API_URL}/plans/${plan.id}/sessions/${s.id}/sets`,
+          { headers }
+        );
+        setsMap[s.id] = res.ok ? await res.json() : [];
+      })
+    );
+    setSessionSets(setsMap);
+  }
+
+  async function switchActivePlan(plan: Plan) {
+    setActivePlanId(plan.id);
+    setSessionSets({});
+    const headers = await getAuthHeaders();
+    await fetchSessionSets(plan, headers);
+  }
 
   async function loadData() {
     setLoading(true);
@@ -228,28 +251,20 @@ export default function Dashboard() {
       }
       if (logsRes.ok) setLogs(await logsRes.json());
 
-      // Fetch actual configured sets for all sessions in active plan
-      const activePlan = loadedPlans[0] ?? null;
-      if (activePlan && activePlan.plan_sessions.length > 0) {
-        const setsMap: Record<string, { reps: number | null; weight_kg: number | null }[]> = {};
-        await Promise.all(
-          activePlan.plan_sessions.map(async s => {
-            // Use activePlan.id — s.plan_id may not be in API response
-            const res = await fetch(
-              `${API_URL}/plans/${activePlan.id}/sessions/${s.id}/sets`,
-              { headers }
-            );
-            setsMap[s.id] = res.ok ? await res.json() : [];
-          })
-        );
-        setSessionSets(setsMap);
+      // Set active plan — keep existing selection if it's still valid, else default to first
+      const firstPlan = loadedPlans[0] ?? null;
+      const currentId = activePlanId;
+      const targetPlan = loadedPlans.find(p => p.id === currentId) ?? firstPlan;
+      if (targetPlan) {
+        setActivePlanId(targetPlan.id);
+        await fetchSessionSets(targetPlan, headers);
       }
     } finally {
       setLoading(false);
     }
   }
 
-  const activePlan     = plans[0] ?? null;
+  const activePlan     = plans.find(p => p.id === activePlanId) ?? plans[0] ?? null;
   const totalExercises = plans.reduce((s, p) => s + p.plan_sessions.length, 0);
   const todayExercises = activePlan?.plan_sessions.filter(s => s.day_of_week === todayDay) ?? [];
   const streak         = calcStreak(logs);
@@ -416,24 +431,30 @@ export default function Dashboard() {
       {plans.length > 0 && (
         <>
           <Text style={styles.sectionLabel}>YOUR PLANS</Text>
-          {plans.map(plan => (
-            <TouchableOpacity
-              key={plan.id}
-              style={styles.planRow}
-              onPress={() => router.push('/(app)/workout-builder')}
-              activeOpacity={0.8}
-            >
-              <View style={styles.planRowLeft}>
-                <Text style={styles.planRowName}>{plan.name}</Text>
-                {plan.goal && <Text style={styles.planRowGoal}>{plan.goal.replace('_', ' ').toUpperCase()}</Text>}
-              </View>
-              <View style={styles.planRowRight}>
-                <Text style={styles.planRowCount}>{plan.plan_sessions.length}</Text>
-                <Text style={styles.planRowCountLabel}>exercises</Text>
-              </View>
-              <Text style={styles.planRowChevron}>›</Text>
-            </TouchableOpacity>
-          ))}
+          <Text style={styles.planSwitchHint}>Tap to set as active · Long press to edit</Text>
+          {plans.map(plan => {
+            const isActive = plan.id === activePlan?.id;
+            return (
+              <TouchableOpacity
+                key={plan.id}
+                style={[styles.planRow, isActive && styles.planRowActive]}
+                onPress={() => switchActivePlan(plan)}
+                onLongPress={() => router.push('/(app)/workout-builder')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.planRowLeft}>
+                  <Text style={[styles.planRowName, isActive && styles.planRowNameActive]}>{plan.name}</Text>
+                  {plan.goal && <Text style={styles.planRowGoal}>{plan.goal.replace('_', ' ').toUpperCase()}</Text>}
+                </View>
+                <View style={styles.planRowRight}>
+                  {isActive && <Text style={styles.activeBadge}>ACTIVE</Text>}
+                  <Text style={styles.planRowCount}>{plan.plan_sessions.length}</Text>
+                  <Text style={styles.planRowCountLabel}>exercises</Text>
+                </View>
+                <Text style={styles.planRowChevron}>›</Text>
+              </TouchableOpacity>
+            );
+          })}
         </>
       )}
 
@@ -588,14 +609,21 @@ const styles = StyleSheet.create({
   },
   buildPlanBtnText: { color: colors.onSurface, fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
 
+  planSwitchHint: { fontSize: 9, color: colors.onSurfaceVariant, marginBottom: 10, marginTop: -6 },
   planRow: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceContainer,
     borderRadius: 16, padding: 16, marginBottom: 10,
   },
+  planRowActive: {
+    borderWidth: 1.5, borderColor: colors.primaryContainer,
+    backgroundColor: colors.primaryContainer + '12',
+  },
   planRowLeft: { flex: 1, gap: 2 },
   planRowName: { fontSize: 15, fontWeight: '800', color: colors.onSurface },
+  planRowNameActive: { color: colors.primaryContainer },
   planRowGoal: { fontSize: 9, color: colors.primaryContainer, letterSpacing: 1.5 },
   planRowRight: { alignItems: 'center', paddingHorizontal: 12, gap: 2 },
+  activeBadge: { fontSize: 7, fontWeight: '900', color: colors.onPrimaryContainer, backgroundColor: colors.primaryContainer, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, letterSpacing: 1, marginBottom: 4 },
   planRowCount: { fontSize: 20, fontWeight: '900', color: colors.onSurface },
   planRowCountLabel: { fontSize: 8, color: colors.onSurfaceVariant, letterSpacing: 1 },
   planRowChevron: { fontSize: 24, color: colors.onSurfaceVariant },
