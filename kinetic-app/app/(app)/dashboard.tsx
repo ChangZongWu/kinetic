@@ -21,6 +21,7 @@ const DAY_LBLS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
 interface PlanSession {
   id: string;
+  plan_id: string;
   day_of_week: string;
   exercises: {
     name: string;
@@ -173,13 +174,29 @@ const cs = StyleSheet.create({
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
+// Format set display: use actual configured sets if available, else suggestion
+function fmtSetsFor(
+  session: PlanSession,
+  sessionSets: Record<string, { reps: number | null; weight_kg: number | null }[]>
+): string {
+  const sets = sessionSets[session.id];
+  if (sets && sets.length > 0) {
+    const firstReps = sets[0].reps;
+    const repsLabel = firstReps != null ? String(firstReps) : session.exercises.reps_suggestion;
+    return `${sets.length}×${repsLabel}`;
+  }
+  return `${session.exercises.sets_suggestion}×${session.exercises.reps_suggestion}`;
+}
+
 export default function Dashboard() {
   const router = useRouter();
-  const [plans,      setPlans]      = useState<Plan[]>([]);
-  const [profile,    setProfile]    = useState<Profile>({});
-  const [logs,       setLogs]       = useState<WorkoutLog[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [previewDay, setPreviewDay] = useState<string | null>(null);
+  const [plans,       setPlans]       = useState<Plan[]>([]);
+  const [profile,     setProfile]     = useState<Profile>({});
+  const [logs,        setLogs]        = useState<WorkoutLog[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [previewDay,  setPreviewDay]  = useState<string | null>(null);
+  // sessionId → array of configured sets (from workout builder)
+  const [sessionSets, setSessionSets] = useState<Record<string, { reps: number | null; weight_kg: number | null }[]>>({});
 
   const todayDay   = getTodayDay();
   const todayIndex = DAYS.indexOf(todayDay);
@@ -200,12 +217,32 @@ export default function Dashboard() {
         fetch(`${API_URL}/profile`, { headers }),
         fetch(`${API_URL}/logs`,    { headers }),
       ]);
-      if (plansRes.ok)   setPlans(await plansRes.json());
+      let loadedPlans: Plan[] = [];
+      if (plansRes.ok) {
+        loadedPlans = await plansRes.json();
+        setPlans(loadedPlans);
+      }
       if (profileRes.ok) {
         const p = await profileRes.json();
         setProfile({ ...p, email: user?.email ?? '' });
       }
-      if (logsRes.ok)    setLogs(await logsRes.json());
+      if (logsRes.ok) setLogs(await logsRes.json());
+
+      // Fetch actual configured sets for all sessions in active plan
+      const activePlan = loadedPlans[0] ?? null;
+      if (activePlan && activePlan.plan_sessions.length > 0) {
+        const setsMap: Record<string, { reps: number | null; weight_kg: number | null }[]> = {};
+        await Promise.all(
+          activePlan.plan_sessions.map(async s => {
+            const res = await fetch(
+              `${API_URL}/plans/${s.plan_id}/sessions/${s.id}/sets`,
+              { headers }
+            );
+            setsMap[s.id] = res.ok ? await res.json() : [];
+          })
+        );
+        setSessionSets(setsMap);
+      }
     } finally {
       setLoading(false);
     }
@@ -351,7 +388,7 @@ export default function Dashboard() {
                   {session.exercises.muscle_groups?.name} · {session.exercises.equipment}
                 </Text>
               </View>
-              <Text style={styles.todaySets}>{session.exercises.sets_suggestion}×{session.exercises.reps_suggestion}</Text>
+              <Text style={styles.todaySets}>{fmtSetsFor(session, sessionSets)}</Text>
             </View>
           ))}
           <TouchableOpacity
@@ -442,7 +479,7 @@ export default function Dashboard() {
                     <Text style={styles.modalExName}>{s.exercises.name}</Text>
                     <Text style={styles.modalExMeta}>{s.exercises.muscle_groups?.name} · {s.exercises.equipment}</Text>
                   </View>
-                  <Text style={styles.modalExSets}>{s.exercises.sets_suggestion}×{s.exercises.reps_suggestion}</Text>
+                  <Text style={styles.modalExSets}>{fmtSetsFor(s, sessionSets)}</Text>
                 </View>
               ));
             })()}
