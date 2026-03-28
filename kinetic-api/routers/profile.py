@@ -14,6 +14,7 @@ class UpdateProfileBody(BaseModel):
     age: Optional[int] = None
     goal: Optional[str] = None
     units: Optional[str] = None
+    fitness_level: Optional[str] = None
     default_rest_timer: Optional[int] = None
 
 

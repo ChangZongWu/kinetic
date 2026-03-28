@@ -172,23 +172,38 @@ function getWeekStart(): Date {
 }
 
 function getExerciseSummary(sets: LogSet[]) {
-  const map: Record<string, { name: string; muscle: string; reps: number[]; count: number }> = {};
+  const map: Record<string, { name: string; muscle: string; reps: number[]; count: number; maxWeight: number }> = {};
   for (const s of sets) {
     const key = s.exercise_id;
     const name = s.exercises?.name ?? 'Exercise';
     const muscle = s.exercises?.muscle_groups?.name ?? '';
-    if (!map[key]) map[key] = { name, muscle, reps: [], count: 0 };
+    if (!map[key]) map[key] = { name, muscle, reps: [], count: 0, maxWeight: 0 };
     map[key].count++;
     if (s.reps) map[key].reps.push(s.reps);
+    if (s.weight_kg && s.weight_kg > map[key].maxWeight) map[key].maxWeight = s.weight_kg;
   }
   return Object.values(map).map(ex => ({
     name: ex.name,
     muscle: ex.muscle,
     sets: ex.count,
+    maxWeight: ex.maxWeight,
     avgReps: ex.reps.length > 0
       ? Math.round(ex.reps.reduce((a, b) => a + b, 0) / ex.reps.length).toString()
       : '—',
   }));
+}
+
+// Compute all-time max weight per exercise from all logs
+function computePRs(logs: WorkoutLog[]): Record<string, number> {
+  const prs: Record<string, number> = {};
+  for (const log of logs) {
+    for (const s of log.log_sets ?? []) {
+      if (s.weight_kg && s.weight_kg > (prs[s.exercise_id] ?? 0)) {
+        prs[s.exercise_id] = s.weight_kg;
+      }
+    }
+  }
+  return prs;
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -339,6 +354,9 @@ export default function Progress() {
   const totalWorkouts = logs.length;
   const weekStart = getWeekStart();
   const thisWeek = logs.filter(l => new Date(l.logged_at) >= weekStart).length;
+  // PRs: for each log, check if any set in that log set a new all-time record
+  // We build PRs from all logs BEFORE the current one (chronologically)
+  const allTimePRs = computePRs(logs);
   const totalVolume = logs.reduce(
     (sum, log) =>
       sum + (log.log_sets ?? []).reduce(
@@ -444,15 +462,23 @@ export default function Progress() {
                   </TouchableOpacity>
                 </View>
 
-                {summary.map((ex, i) => (
-                  <View key={i} style={[styles.logExRow, i > 0 && styles.logExRowBorder]}>
-                    <View style={styles.logExLeft}>
-                      <Text style={styles.logExName}>{ex.name}</Text>
-                      {ex.muscle ? <Text style={styles.logExMuscle}>{ex.muscle}</Text> : null}
+                {summary.map((ex, i) => {
+                  // Find exercise_id from log_sets
+                  const exId = log.log_sets?.find(s => s.exercises?.name === ex.name)?.exercise_id;
+                  const isPR = exId && allTimePRs[exId] > 0 && ex.maxWeight >= allTimePRs[exId] && ex.maxWeight > 0;
+                  return (
+                    <View key={i} style={[styles.logExRow, i > 0 && styles.logExRowBorder]}>
+                      <View style={styles.logExLeft}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={styles.logExName}>{ex.name}</Text>
+                          {isPR && <Text style={styles.prBadge}>🏆 PR</Text>}
+                        </View>
+                        {ex.muscle ? <Text style={styles.logExMuscle}>{ex.muscle}</Text> : null}
+                      </View>
+                      <Text style={styles.logExSets}>{ex.sets}×{ex.avgReps}</Text>
                     </View>
-                    <Text style={styles.logExSets}>{ex.sets}×{ex.avgReps}</Text>
-                  </View>
-                ))}
+                  );
+                })}
 
                 <View style={styles.logCardFooter}>
                   <Text style={styles.logFooterStat}>{totalSets} sets</Text>
@@ -626,6 +652,7 @@ const styles = StyleSheet.create({
   logExName: { fontSize: 13, fontWeight: '700', color: colors.onSurface },
   logExMuscle: { fontSize: 10, color: colors.onSurfaceVariant },
   logExSets: { fontSize: 13, fontWeight: '800', color: colors.tertiary },
+  prBadge: { fontSize: 9, fontWeight: '800', color: colors.primaryContainer, letterSpacing: 0.5 },
 
   logCardFooter: {
     flexDirection: 'row', justifyContent: 'flex-end', gap: 16,

@@ -157,11 +157,14 @@ export default function AIAdvisor() {
           m.id === assistantId ? { ...m, streaming: false } : m
         )
       );
-    } catch (err) {
+    } catch (err: any) {
+      const msg = err?.message?.includes('503')
+        ? 'AI Advisor is not configured yet. Add ANTHROPIC_API_KEY to your Railway environment variables to enable it.'
+        : 'Could not reach the AI advisor. Check your internet connection and try again.';
       setMessages(prev =>
         prev.map(m =>
           m.id === assistantId
-            ? { ...m, content: 'Could not reach the AI advisor. Check your connection.', streaming: false }
+            ? { ...m, content: msg, streaming: false }
             : m
         )
       );

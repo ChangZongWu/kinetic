@@ -284,6 +284,25 @@ export default function Dashboard() {
         </>
       )}
 
+      {/* Last trained nudge */}
+      {(() => {
+        if (logs.length === 0) return null;
+        const last = new Date(logs[0].logged_at);
+        const diffDays = Math.floor((Date.now() - last.getTime()) / 86400000);
+        if (diffDays === 0) return null; // trained today, no nudge needed
+        const msg = diffDays === 1
+          ? 'Last trained yesterday — keep it up!'
+          : diffDays <= 3
+          ? `${diffDays} days since your last workout — time to train!`
+          : `You haven't trained in ${diffDays} days — let's get back on track!`;
+        return (
+          <View style={styles.nudgeCard}>
+            <Text style={styles.nudgeIcon}>{diffDays >= 3 ? '🔔' : '💪'}</Text>
+            <Text style={styles.nudgeText}>{msg}</Text>
+          </View>
+        );
+      })()}
+
       {/* Today's session */}
       <Text style={styles.sectionLabel}>TODAY'S SESSION</Text>
       {todayExercises.length > 0 ? (
@@ -303,8 +322,14 @@ export default function Dashboard() {
               <Text style={styles.todaySets}>{session.exercises.sets_suggestion}×{session.exercises.reps_suggestion}</Text>
             </View>
           ))}
-          <TouchableOpacity style={styles.startSessionBtn} onPress={() => router.push('/(app)/workout-builder')}>
-            <Text style={styles.startSessionBtnText}>▶  VIEW IN BUILDER</Text>
+          <TouchableOpacity
+            style={styles.startSessionBtn}
+            onPress={() => router.push({
+              pathname: '/(app)/active-workout',
+              params: { planId: activePlan?.id, day: todayDay },
+            } as any)}
+          >
+            <Text style={styles.startSessionBtnText}>▶  START WORKOUT</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -451,6 +476,15 @@ const styles = StyleSheet.create({
   planRowCount: { fontSize: 20, fontWeight: '900', color: colors.onSurface },
   planRowCountLabel: { fontSize: 8, color: colors.onSurfaceVariant, letterSpacing: 1 },
   planRowChevron: { fontSize: 24, color: colors.onSurfaceVariant },
+
+  nudgeCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: colors.surfaceContainer,
+    borderRadius: 14, padding: 14, marginBottom: 20,
+    borderLeftWidth: 3, borderLeftColor: colors.primaryContainer,
+  },
+  nudgeIcon: { fontSize: 20 },
+  nudgeText: { flex: 1, fontSize: 13, color: colors.onSurface, lineHeight: 18, fontWeight: '600' },
 
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: 10 },
   emptyStateTitle: { fontSize: 22, fontWeight: '900', color: colors.onSurface },

@@ -6,7 +6,7 @@ import {
   TextInput,
   StyleSheet,
   ActivityIndicator,
-  Alert,
+  Modal,
 } from 'react-native';
 import { useState, useCallback } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -34,11 +34,19 @@ async function getAuthHeaders() {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
+interface LifetimeStats {
+  totalWorkouts: number;
+  totalVolume: number;
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
-  const [loading, setLoading]   = useState(true);
-  const [saving, setSaving]     = useState(false);
-  const [email, setEmail]       = useState('');
+  const [loading, setLoading]         = useState(true);
+  const [saving, setSaving]           = useState(false);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [signingOut, setSigningOut]   = useState(false);
+  const [email, setEmail]             = useState('');
+  const [stats, setStats]             = useState<LifetimeStats>({ totalWorkouts: 0, totalVolume: 0 });
 
   const [fullName,      setFullName]      = useState('');
   const [age,           setAge]           = useState('');
@@ -60,9 +68,12 @@ export default function ProfileScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       setEmail(user?.email ?? '');
       const headers = await getAuthHeaders();
-      const res = await fetch(`${API_URL}/profile`, { headers });
-      if (res.ok) {
-        const p = await res.json();
+      const [profileRes, logsRes] = await Promise.all([
+        fetch(`${API_URL}/profile`, { headers }),
+        fetch(`${API_URL}/logs`,    { headers }),
+      ]);
+      if (profileRes.ok) {
+        const p = await profileRes.json();
         setFullName(p.full_name  ?? '');
         setAge(      p.age        ? String(p.age)        : '');
         setWeightKg( p.weight_kg  ? String(p.weight_kg)  : '');
@@ -70,6 +81,13 @@ export default function ProfileScreen() {
         setGoal(        p.goal          ?? '');
         setUnits(       p.units         ?? 'metric');
         setFitnessLevel(p.fitness_level ?? '');
+      }
+      if (logsRes.ok) {
+        const logs: any[] = await logsRes.json();
+        const totalVolume = logs.reduce((sum: number, log: any) =>
+          sum + (log.log_sets ?? []).reduce((s: number, set: any) =>
+            s + (set.reps ?? 0) * (set.weight_kg ?? 0), 0), 0);
+        setStats({ totalWorkouts: logs.length, totalVolume: Math.round(totalVolume) });
       }
     } finally {
       setLoading(false);
@@ -97,29 +115,23 @@ export default function ProfileScreen() {
         headers,
         body: JSON.stringify(body),
       });
-      if (res.ok) {
-        Alert.alert('Saved', 'Profile updated.');
-      } else {
-        throw new Error();
-      }
+      if (!res.ok) throw new Error();
     } catch {
-      Alert.alert('Error', 'Could not save. Try again.');
+      // silently fail — save button returns to normal state
     } finally {
       setSaving(false);
     }
   }
 
-  async function signOut() {
-    Alert.alert('Sign Out', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out', style: 'destructive',
-        onPress: async () => {
-          await supabase.auth.signOut();
-          router.replace('/(auth)/login');
-        },
-      },
-    ]);
+  async function confirmSignOut() {
+    setSigningOut(true);
+    try {
+      await supabase.auth.signOut();
+      router.replace('/(auth)/login');
+    } finally {
+      setSigningOut(false);
+      setShowSignOutModal(false);
+    }
   }
 
   const initials = fullName
@@ -137,7 +149,8 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView style={s.root} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+    <View style={s.root}>
+    <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
       {/* Avatar */}
       <View style={s.avatarSection}>
@@ -147,6 +160,24 @@ export default function ProfileScreen() {
         <Text style={s.emailText}>{email}</Text>
         <Text style={s.hint}>Edit your profile below</Text>
       </View>
+
+      {/* Lifetime stats */}
+      {(stats.totalWorkouts > 0) && (
+        <View style={s.statsRow}>
+          <View style={s.statCard}>
+            <Text style={s.statNum}>{stats.totalWorkouts}</Text>
+            <Text style={s.statLabel}>WORKOUTS</Text>
+          </View>
+          <View style={s.statCard}>
+            <Text style={s.statNum}>
+              {stats.totalVolume >= 1000
+                ? `${(stats.totalVolume / 1000).toFixed(1)}k`
+                : stats.totalVolume}
+            </Text>
+            <Text style={s.statLabel}>KG LIFTED</Text>
+          </View>
+        </View>
+      )}
 
       {/* Personal Info */}
       <Text style={s.sectionLabel}>PERSONAL INFO</Text>
@@ -217,12 +248,36 @@ export default function ProfileScreen() {
       </TouchableOpacity>
 
       {/* Sign Out */}
-      <TouchableOpacity style={s.signOutBtn} onPress={signOut}>
+      <TouchableOpacity style={s.signOutBtn} onPress={() => setShowSignOutModal(true)}>
         <Text style={s.signOutTxt}>SIGN OUT</Text>
       </TouchableOpacity>
 
       <View style={{ height: 40 }} />
     </ScrollView>
+
+    {/* Sign Out Confirmation Modal */}
+    <Modal visible={showSignOutModal} transparent animationType="fade" onRequestClose={() => setShowSignOutModal(false)}>
+      <View style={s.modalOverlay}>
+        <View style={s.modalBox}>
+          <Text style={s.modalTitle}>SIGN OUT</Text>
+          <Text style={s.modalBody}>Are you sure you want to sign out?</Text>
+          <TouchableOpacity
+            style={[s.modalConfirmBtn, signingOut && s.saveBtnOff]}
+            onPress={confirmSignOut}
+            disabled={signingOut}
+          >
+            {signingOut
+              ? <ActivityIndicator size="small" color={colors.onPrimaryContainer} />
+              : <Text style={s.modalConfirmTxt}>YES, SIGN OUT</Text>
+            }
+          </TouchableOpacity>
+          <TouchableOpacity style={s.modalCancelBtn} onPress={() => setShowSignOutModal(false)}>
+            <Text style={s.modalCancelTxt}>CANCEL</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+    </View>
   );
 }
 
@@ -273,6 +328,14 @@ const s = StyleSheet.create({
   emailText:  { fontSize: 14, color: colors.onSurface, fontWeight: '600' },
   hint:       { fontSize: 11, color: colors.onSurfaceVariant },
 
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 28 },
+  statCard: {
+    flex: 1, backgroundColor: colors.surfaceContainer,
+    borderRadius: 16, padding: 16, alignItems: 'center', gap: 4,
+  },
+  statNum:   { fontSize: 26, fontWeight: '900', color: colors.primaryContainer },
+  statLabel: { fontSize: 8, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 2 },
+
   sectionLabel: {
     fontSize: 9, fontWeight: '800', color: colors.onSurfaceVariant,
     letterSpacing: 3, marginBottom: 10, marginTop: 4,
@@ -312,15 +375,44 @@ const s = StyleSheet.create({
     paddingVertical: 16, alignItems: 'center',
   },
   signOutTxt: { color: colors.onSurfaceVariant, fontWeight: '800', fontSize: 11, letterSpacing: 1.5 },
+
+  // Sign-out modal
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center', alignItems: 'center', padding: 32,
+  },
+  modalBox: {
+    backgroundColor: colors.surfaceContainerHigh, borderRadius: 24,
+    padding: 28, width: '100%', maxWidth: 360, gap: 8,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: colors.onSurface, letterSpacing: -0.5, marginBottom: 4 },
+  modalBody:  { fontSize: 14, color: colors.onSurfaceVariant, lineHeight: 20, marginBottom: 8 },
+  modalConfirmBtn: {
+    backgroundColor: colors.secondary, borderRadius: 50,
+    paddingVertical: 16, alignItems: 'center', marginTop: 8,
+  },
+  modalConfirmTxt: { color: '#fff', fontWeight: '900', fontSize: 12, letterSpacing: 1.5 },
+  modalCancelBtn:  { paddingVertical: 14, alignItems: 'center' },
+  modalCancelTxt:  { color: colors.onSurfaceVariant, fontWeight: '700', fontSize: 12, letterSpacing: 1 },
 });
 
 const fr = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
   label: {
     width: 130, fontSize: 9, fontWeight: '800',
     color: colors.onSurfaceVariant, letterSpacing: 1.5,
   },
   input: {
-    flex: 1, color: colors.onSurface, fontSize: 14, fontWeight: '600', textAlign: 'right',
-  },
+    flex: 1,
+    color: colors.onSurface,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'right',
+    backgroundColor: colors.surfaceContainerHigh,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.outlineVariant,
+  } as any,
 });
