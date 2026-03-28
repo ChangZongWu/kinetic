@@ -327,7 +327,7 @@ export default function ExerciseList() {
           contentContainerStyle={styles.listContent}
           renderItem={({ item: ex }) => (
             <TouchableOpacity
-              style={styles.exerciseCard}
+              style={[styles.exerciseCard, { borderLeftColor: DIFFICULTY_COLOR[ex.difficulty] }]}
               onPress={async () => {
                 if (isAddMode && planId && day) {
                   setAdding(true);
@@ -534,21 +534,23 @@ const styles = StyleSheet.create({
   exerciseCard: {
     backgroundColor: colors.surfaceContainer,
     borderRadius: 16,
-    padding: 18,
+    padding: 20,
     marginBottom: 10,
-    gap: 8,
+    gap: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: 'transparent',
   },
-  cardTop:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  exerciseName: { flex: 1, fontSize: 16, fontWeight: '800', color: colors.onSurface },
+  cardTop:      { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
+  exerciseName: { flex: 1, fontSize: 18, fontWeight: '900', color: colors.onSurface, letterSpacing: -0.3 },
   diffBadge:    { borderRadius: 50, paddingHorizontal: 10, paddingVertical: 4 },
   diffBadgeText:{ fontSize: 8, fontWeight: '900', letterSpacing: 1 },
   exerciseDesc: { fontSize: 12, color: colors.onSurfaceVariant, lineHeight: 18 },
   muscleTag: { alignSelf: 'flex-start', backgroundColor: colors.tertiary + '22', borderRadius: 50, paddingHorizontal: 10, paddingVertical: 3 },
   muscleTagText: { fontSize: 8, fontWeight: '800', color: colors.tertiary, letterSpacing: 1.5 },
-  cardMeta:     { flexDirection: 'row', gap: 16, marginTop: 4 },
+  cardMeta:     { flexDirection: 'row', gap: 16, marginTop: 2 },
   metaItem:     { flexDirection: 'row', alignItems: 'center', gap: 5 },
   metaIcon:     { fontSize: 11, color: colors.onSurfaceVariant },
-  metaText:     { fontSize: 11, color: colors.onSurfaceVariant, fontWeight: '600' },
+  metaText:     { fontSize: 11, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.3 },
 
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },

@@ -91,7 +91,7 @@ function BodyMap({
   const regions = view === 'front' ? FRONT_REGIONS : BACK_REGIONS;
 
   return (
-    <Svg viewBox="0 0 200 430" height={300} width="100%">
+    <Svg viewBox="0 0 200 430" height={420} width="100%">
 
       {/* ── Silhouette background ──────────────────────────────── */}
       <Circle cx={100} cy={44}  r={26}                    fill={SILHOUETTE} />
@@ -145,7 +145,6 @@ export default function MuscleSelector() {
   const router = useRouter();
   const { mode, planId, day } = useLocalSearchParams<{ mode?: string; planId?: string; day?: string }>();
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [mapView, setMapView]   = useState<'front' | 'back'>('front');
 
   const { data: muscles, isLoading, isError } = useQuery({
     queryKey: ['muscles'],
@@ -206,29 +205,27 @@ export default function MuscleSelector() {
           </Text>
         </View>
 
-        {/* Front / Back toggle */}
-        <View style={s.viewToggle}>
-          {(['front', 'back'] as const).map(v => (
-            <TouchableOpacity
-              key={v}
-              style={[s.viewToggleBtn, mapView === v && s.viewToggleBtnOn]}
-              onPress={() => setMapView(v)}
-            >
-              <Text style={[s.viewToggleTxt, mapView === v && s.viewToggleTxtOn]}>
-                {v === 'front' ? '◈  FRONT' : '◉  BACK'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* SVG Body Map */}
-        <View style={s.mapContainer}>
-          <BodyMap
-            muscles={muscles ?? []}
-            selected={selected}
-            onToggle={toggleMuscleByName}
-            view={mapView}
-          />
+        {/* SVG Body Maps — side by side */}
+        <View style={s.mapsRow}>
+          <View style={s.mapHalf}>
+            <Text style={s.mapLabel}>ANTERIOR</Text>
+            <BodyMap
+              muscles={muscles ?? []}
+              selected={selected}
+              onToggle={toggleMuscleByName}
+              view="front"
+            />
+          </View>
+          <View style={s.mapDivider} />
+          <View style={s.mapHalf}>
+            <Text style={s.mapLabel}>POSTERIOR</Text>
+            <BodyMap
+              muscles={muscles ?? []}
+              selected={selected}
+              onToggle={toggleMuscleByName}
+              view="back"
+            />
+          </View>
         </View>
 
         {/* Divider */}
@@ -320,22 +317,16 @@ const s = StyleSheet.create({
   titleAccent:   { fontSize: 36, fontWeight: '900', color: colors.primaryContainer, letterSpacing: -1, lineHeight: 40 },
   selectedCount: { fontSize: 9, fontWeight: '700', color: colors.onSurfaceVariant, letterSpacing: 2.5 },
 
-  // Front/Back toggle
-  viewToggle:      { flexDirection: 'row', marginHorizontal: 24, marginBottom: 8, gap: 8 },
-  viewToggleBtn:   {
-    flex: 1, paddingVertical: 10, borderRadius: 50,
-    backgroundColor: colors.surfaceContainer, alignItems: 'center',
-    borderWidth: 1, borderColor: colors.outlineVariant,
+  // Body maps side by side
+  mapsRow: {
+    flexDirection: 'row', marginHorizontal: 16,
+    backgroundColor: colors.surfaceContainer,
+    borderRadius: 20, overflow: 'hidden',
+    paddingVertical: 12,
   },
-  viewToggleBtnOn: { backgroundColor: colors.primaryContainer, borderColor: colors.primaryContainer },
-  viewToggleTxt:   { fontSize: 10, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1 },
-  viewToggleTxtOn: { color: colors.onPrimaryContainer },
-
-  // Body map
-  mapContainer: {
-    marginHorizontal: 24, backgroundColor: colors.surfaceContainer,
-    borderRadius: 20, overflow: 'hidden', paddingVertical: 8,
-  },
+  mapHalf:    { flex: 1, alignItems: 'center' },
+  mapLabel:   { fontSize: 8, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 2, marginBottom: 4 },
+  mapDivider: { width: 1, backgroundColor: colors.outlineVariant + '44', marginVertical: 8 },
 
   // Divider
   dividerRow:  { flexDirection: 'row', alignItems: 'center', marginHorizontal: 24, marginVertical: 20, gap: 10 },
