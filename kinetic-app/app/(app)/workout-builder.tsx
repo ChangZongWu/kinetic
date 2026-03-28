@@ -9,7 +9,7 @@ import {
   ScrollView,
   TextInput,
 } from 'react-native';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { colors } from '../../theme/colors';
 import { supabase } from '../../lib/supabase';
@@ -64,7 +64,7 @@ async function getAuthHeaders() {
 
 export default function WorkoutBuilder() {
   const router  = useRouter();
-  const params  = useLocalSearchParams<{ addExerciseId?: string; addDay?: string; addPlanId?: string }>();
+  const params  = useLocalSearchParams<{ addExerciseId?: string; addDay?: string; addPlanId?: string; jumpDay?: string }>();
 
   const [plans,           setPlans]           = useState<Plan[]>([]);
   const [activePlanId,    setActivePlanId]     = useState<string | null>(null);
@@ -73,6 +73,9 @@ export default function WorkoutBuilder() {
   const [showNewPlanModal,setShowNewPlanModal] = useState(false);
   const [newPlanName,     setNewPlanName]      = useState('');
   const [newPlanGoal,     setNewPlanGoal]      = useState<string | null>(null);
+  const [renamingPlanId,  setRenamingPlanId]   = useState<string | null>(null);
+  const [renameText,      setRenameText]       = useState('');
+  const addExerciseHandled = useRef<string | null>(null);
 
   // Inline sets state
   // daySets:   { [sessionId]: SessionSet[] }
@@ -99,14 +102,23 @@ export default function WorkoutBuilder() {
     finally { setLoading(false); }
   }, []);
 
-  useFocusEffect(useCallback(() => { loadPlans(); }, [loadPlans]));
+  useFocusEffect(useCallback(() => {
+    loadPlans();
+    // Jump to a specific day if passed from dashboard
+    if (params.jumpDay && DAYS.includes(params.jumpDay)) {
+      setActiveDay(params.jumpDay);
+      router.setParams({ jumpDay: undefined });
+    }
+  }, [loadPlans, params.jumpDay]));
 
-  // Handle navigate-back-with-exercise params
+  // Handle navigate-back-with-exercise params — guard against double-fire
   useFocusEffect(useCallback(() => {
     const { addExerciseId, addDay, addPlanId } = params;
-    if (addExerciseId && addDay && addPlanId) {
-      addExerciseToPlan(addPlanId, addExerciseId, addDay);
+    const key = addExerciseId ? `${addExerciseId}-${addDay}-${addPlanId}` : null;
+    if (addExerciseId && addDay && addPlanId && key !== addExerciseHandled.current) {
+      addExerciseHandled.current = key;
       router.setParams({ addExerciseId: undefined, addDay: undefined, addPlanId: undefined });
+      addExerciseToPlan(addPlanId, addExerciseId, addDay);
     }
   }, [params.addExerciseId]));
 
@@ -195,6 +207,19 @@ export default function WorkoutBuilder() {
       const headers = await getAuthHeaders();
       await fetch(`${API_URL}/plans/${planId}`, { method: 'DELETE', headers });
       setActivePlanId(null);
+      await loadPlans();
+    } catch {}
+  }
+
+  async function renamePlan(planId: string, name: string) {
+    if (!name.trim()) return;
+    try {
+      const headers = await getAuthHeaders();
+      await fetch(`${API_URL}/plans/${planId}`, {
+        method: 'PATCH', headers,
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      setRenamingPlanId(null);
       await loadPlans();
     } catch {}
   }
@@ -290,6 +315,7 @@ export default function WorkoutBuilder() {
             key={plan.id}
             style={[s.planTab, activePlanId === plan.id && s.planTabActive]}
             onPress={() => setActivePlanId(plan.id)}
+            onLongPress={() => { setRenamingPlanId(plan.id); setRenameText(plan.name); }}
           >
             <Text style={[s.planTabText, activePlanId === plan.id && s.planTabTextActive]}>
               {plan.name.toUpperCase()}
@@ -310,7 +336,13 @@ export default function WorkoutBuilder() {
         <>
           {/* Plan meta */}
           <View style={s.planActions}>
-            <Text style={s.planActionsLabel}>{activePlan.plan_sessions.length} exercises total</Text>
+            <TouchableOpacity
+              style={s.renamePlanRow}
+              onPress={() => { setRenamingPlanId(activePlan.id); setRenameText(activePlan.name); }}
+            >
+              <Text style={s.planActionsLabel}>{activePlan.plan_sessions.length} exercises total</Text>
+              <Text style={s.renameIcon}>✎</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => deletePlan(activePlan.id)} style={s.deletePlanBtn}>
               <Text style={s.deletePlanBtnText}>DELETE PLAN</Text>
             </TouchableOpacity>
@@ -448,6 +480,30 @@ export default function WorkoutBuilder() {
         </View>
       )}
 
+      {/* Rename Plan Modal */}
+      <Modal visible={!!renamingPlanId} transparent animationType="slide" onRequestClose={() => setRenamingPlanId(null)}>
+        <View style={s.modalOverlay}>
+          <View style={s.modalSheet}>
+            <View style={s.sheetHandle} />
+            <Text style={s.modalTitle}>RENAME PLAN</Text>
+            <Text style={s.inputLabel}>PLAN NAME</Text>
+            <TextInput
+              style={s.textInput}
+              value={renameText}
+              onChangeText={setRenameText}
+              autoFocus
+              selectTextOnFocus
+            />
+            <TouchableOpacity style={s.createBtn} onPress={() => renamingPlanId && renamePlan(renamingPlanId, renameText)}>
+              <Text style={s.createBtnText}>SAVE NAME</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.cancelBtn} onPress={() => setRenamingPlanId(null)}>
+              <Text style={s.cancelBtnText}>CANCEL</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* New Plan Modal */}
       <Modal visible={showNewPlanModal} transparent animationType="slide" onRequestClose={() => setShowNewPlanModal(false)}>
         <View style={s.modalOverlay}>
@@ -520,7 +576,9 @@ const s = StyleSheet.create({
   noPlansText:    { color: colors.onSurfaceVariant, fontSize: 13, paddingVertical: 8 },
 
   planActions:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 8 },
+  renamePlanRow:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
   planActionsLabel:  { fontSize: 11, color: colors.onSurfaceVariant },
+  renameIcon:        { fontSize: 13, color: colors.primaryContainer },
   deletePlanBtn:     { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: colors.surfaceContainer },
   deletePlanBtnText: { fontSize: 9, color: colors.secondary, fontWeight: '700', letterSpacing: 1 },
 

@@ -83,7 +83,11 @@ function getVolumeLast6Weeks(logs: WorkoutLog[]): { label: string; volume: numbe
       .reduce((sum, l) =>
         sum + (l.log_sets ?? []).reduce((s, set) => s + (set.reps ?? 0) * (set.weight_kg ?? 0), 0), 0
       );
-    return { label: weeksAgo === 0 ? 'NOW' : `W-${weeksAgo}`, volume };
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const label = weeksAgo === 0
+      ? 'NOW'
+      : `${monthNames[monday.getMonth()]} ${monday.getDate()}`;
+    return { label, volume };
   });
 }
 

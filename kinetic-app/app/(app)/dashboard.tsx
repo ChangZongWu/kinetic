@@ -225,24 +225,24 @@ export default function Dashboard() {
         )}
       </View>
 
-      {/* Stats row */}
+      {/* Stats row — each card is a navigation shortcut */}
       <View style={styles.statsRow}>
-        <View style={styles.statCard}>
+        <TouchableOpacity style={styles.statCard} onPress={() => router.push('/(app)/workout-builder')} activeOpacity={0.75}>
           <Text style={styles.statNum}>{plans.length}</Text>
           <Text style={styles.statLabel}>PLANS</Text>
-        </View>
-        <View style={styles.statCard}>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.statCard} onPress={() => router.push('/(app)/muscle-selector')} activeOpacity={0.75}>
           <Text style={styles.statNum}>{totalExercises}</Text>
           <Text style={styles.statLabel}>EXERCISES</Text>
-        </View>
-        <View style={styles.statCard}>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.statCard} onPress={() => router.push('/(app)/progress')} activeOpacity={0.75}>
           <Text style={styles.statNum}>{streak}</Text>
-          <Text style={styles.statLabel}>STREAK</Text>
-        </View>
-        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>STREAK 🔥</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.statCard} onPress={() => router.push('/(app)/workout-builder')} activeOpacity={0.75}>
           <Text style={styles.statNum}>{todayExercises.length}</Text>
           <Text style={styles.statLabel}>TODAY</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Weekly volume chart */}
@@ -263,7 +263,12 @@ export default function Dashboard() {
               const isToday   = day === todayDay;
               const sessions  = activePlan.plan_sessions.filter(s => s.day_of_week === day);
               return (
-                <View key={day} style={[styles.dayCard, isToday && styles.dayCardToday]}>
+                <TouchableOpacity
+                  key={day}
+                  style={[styles.dayCard, isToday && styles.dayCardToday]}
+                  onPress={() => router.push({ pathname: '/(app)/workout-builder', params: { jumpDay: day } } as any)}
+                  activeOpacity={0.75}
+                >
                   <Text style={[styles.dayCardLabel, isToday && styles.dayCardLabelToday]}>{DAY_LBLS[i]}</Text>
                   <View style={styles.dayCardDot}>
                     {sessions.length > 0
@@ -272,7 +277,7 @@ export default function Dashboard() {
                     }
                   </View>
                   {isToday && <View style={styles.todayIndicator} />}
-                </View>
+                </TouchableOpacity>
               );
             })}
           </ScrollView>

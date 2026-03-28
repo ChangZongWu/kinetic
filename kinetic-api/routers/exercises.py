@@ -17,7 +17,7 @@ class CreateExerciseBody(BaseModel):
     rpe_suggestion: Optional[float] = 7.0
 
 @router.get("/exercises")
-def get_exercises(muscle_id: str = None, difficulty: str = None, equipment: str = None):
+def get_exercises(muscle_id: str = None, difficulty: str = None, equipment: str = None, q: str = None):
     query = supabase.table("exercises").select("*, muscle_groups(name, body_region)")
     if muscle_id:
         ids = [i.strip() for i in muscle_id.split(",") if i.strip()]
@@ -29,6 +29,8 @@ def get_exercises(muscle_id: str = None, difficulty: str = None, equipment: str 
         query = query.eq("difficulty", difficulty)
     if equipment:
         query = query.eq("equipment", equipment)
+    if q:
+        query = query.ilike("name", f"%{q}%")
     result = query.execute()
     return result.data
 

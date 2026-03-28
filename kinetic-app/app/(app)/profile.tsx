@@ -22,6 +22,12 @@ const GOALS = [
   { key: 'fat_loss',    label: 'FAT LOSS'    },
 ];
 
+const FITNESS_LEVELS = [
+  { key: 'beginner',     label: 'BEGINNER'     },
+  { key: 'intermediate', label: 'INTERMEDIATE' },
+  { key: 'advanced',     label: 'ADVANCED'     },
+];
+
 async function getAuthHeaders() {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -34,12 +40,13 @@ export default function ProfileScreen() {
   const [saving, setSaving]     = useState(false);
   const [email, setEmail]       = useState('');
 
-  const [fullName,  setFullName]  = useState('');
-  const [age,       setAge]       = useState('');
-  const [weightKg,  setWeightKg]  = useState('');
-  const [heightCm,  setHeightCm]  = useState('');
-  const [goal,      setGoal]      = useState('');
-  const [units,     setUnits]     = useState('metric');
+  const [fullName,      setFullName]      = useState('');
+  const [age,           setAge]           = useState('');
+  const [weightKg,      setWeightKg]      = useState('');
+  const [heightCm,      setHeightCm]      = useState('');
+  const [goal,          setGoal]          = useState('');
+  const [units,         setUnits]         = useState('metric');
+  const [fitnessLevel,  setFitnessLevel]  = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -60,8 +67,9 @@ export default function ProfileScreen() {
         setAge(      p.age        ? String(p.age)        : '');
         setWeightKg( p.weight_kg  ? String(p.weight_kg)  : '');
         setHeightCm( p.height_cm  ? String(p.height_cm)  : '');
-        setGoal(     p.goal       ?? '');
-        setUnits(    p.units      ?? 'metric');
+        setGoal(        p.goal          ?? '');
+        setUnits(       p.units         ?? 'metric');
+        setFitnessLevel(p.fitness_level ?? '');
       }
     } finally {
       setLoading(false);
@@ -80,8 +88,9 @@ export default function ProfileScreen() {
       if (!isNaN(wN) && wN > 0)                 body.weight_kg = wN;
       const hN = parseFloat(heightCm);
       if (!isNaN(hN) && hN > 0)                 body.height_cm = hN;
-      if (goal)                                 body.goal      = goal;
-      if (units)                                body.units     = units;
+      if (goal)                                 body.goal          = goal;
+      if (units)                                body.units         = units;
+      if (fitnessLevel)                         body.fitness_level = fitnessLevel;
 
       const res = await fetch(`${API_URL}/profile`, {
         method: 'PATCH',
@@ -167,6 +176,22 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Fitness Level */}
+      <Text style={s.sectionLabel}>FITNESS LEVEL</Text>
+      <View style={s.card}>
+        <View style={s.chipWrap}>
+          {FITNESS_LEVELS.map(f => (
+            <TouchableOpacity
+              key={f.key}
+              style={[s.chip, fitnessLevel === f.key && s.chipOn]}
+              onPress={() => setFitnessLevel(f.key)}
+            >
+              <Text style={[s.chipTxt, fitnessLevel === f.key && s.chipTxtOn]}>{f.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
       {/* Units */}
       <Text style={s.sectionLabel}>UNITS</Text>
       <View style={s.card}>
@@ -174,10 +199,10 @@ export default function ProfileScreen() {
           {(['metric', 'imperial'] as const).map(u => (
             <TouchableOpacity
               key={u}
-              style={[s.unitChip, units === u && s.chipOn]}
+              style={[s.unitChip, units === u && s.unitChipOn]}
               onPress={() => setUnits(u)}
             >
-              <Text style={[s.chipTxt, units === u && s.chipTxtOn]}>{u.toUpperCase()}</Text>
+              <Text style={[s.chipTxt, units === u && s.chipTxtOn]}>{u === 'metric' ? '⚖ METRIC (KG/CM)' : '⚖ IMPERIAL (LBS/IN)'}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -270,9 +295,10 @@ const s = StyleSheet.create({
     borderRadius: 50, paddingVertical: 12, alignItems: 'center',
     borderWidth: 1, borderColor: colors.outlineVariant,
   },
-  chipOn:    { backgroundColor: colors.primaryContainer + '22', borderColor: colors.primaryContainer },
-  chipTxt:   { fontSize: 10, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1 },
-  chipTxtOn: { color: colors.primaryContainer },
+  chipOn:     { backgroundColor: colors.primaryContainer, borderColor: colors.primaryContainer },
+  unitChipOn: { backgroundColor: colors.primaryContainer, borderColor: colors.primaryContainer },
+  chipTxt:    { fontSize: 10, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1 },
+  chipTxtOn:  { color: colors.onPrimaryContainer },
 
   saveBtn: {
     backgroundColor: colors.primaryContainer, borderRadius: 50,

@@ -9,9 +9,12 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../../theme/colors';
 import { supabase } from '../../lib/supabase';
+
+const CHAT_STORAGE_KEY = 'kinetic_ai_chat_history';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
@@ -33,7 +36,34 @@ export default function AIAdvisor() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput]       = useState('');
   const [loading, setLoading]   = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const listRef = useRef<FlatList>(null);
+
+  // Load persisted history on mount
+  useEffect(() => {
+    AsyncStorage.getItem(CHAT_STORAGE_KEY).then(raw => {
+      if (raw) {
+        try {
+          const saved: ChatMessage[] = JSON.parse(raw);
+          // Strip any streaming flags from previous session
+          setMessages(saved.map(m => ({ ...m, streaming: false })));
+        } catch {}
+      }
+      setHistoryLoaded(true);
+    });
+  }, []);
+
+  // Persist messages whenever they change (skip during streaming)
+  useEffect(() => {
+    if (!historyLoaded) return;
+    const done = messages.filter(m => !m.streaming);
+    AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(done)).catch(() => {});
+  }, [messages, historyLoaded]);
+
+  function clearHistory() {
+    setMessages([]);
+    AsyncStorage.removeItem(CHAT_STORAGE_KEY);
+  }
 
   const scrollToBottom = () => {
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
@@ -174,8 +204,15 @@ export default function AIAdvisor() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>AI ADVISOR</Text>
-        <Text style={styles.headerSub}>Powered by Claude</Text>
+        <View>
+          <Text style={styles.headerTitle}>AI ADVISOR</Text>
+          <Text style={styles.headerSub}>Powered by Claude</Text>
+        </View>
+        {messages.length > 0 && (
+          <TouchableOpacity onPress={clearHistory} style={styles.newChatBtn}>
+            <Text style={styles.newChatBtnText}>NEW CHAT</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Messages / Empty State */}
@@ -253,6 +290,9 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.outlineVariant,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerTitle: {
     fontSize: 20,
@@ -264,6 +304,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.onSurfaceVariant,
     marginTop: 2,
+  },
+  newChatBtn: {
+    backgroundColor: colors.surfaceContainerHigh,
+    borderRadius: 50, paddingHorizontal: 14, paddingVertical: 8,
+    borderWidth: 1, borderColor: colors.outlineVariant,
+  },
+  newChatBtnText: {
+    fontSize: 9, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1.5,
   },
 
   // Empty state

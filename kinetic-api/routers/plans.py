@@ -67,6 +67,29 @@ def get_plan(plan_id: str, user=Depends(get_current_user)):
     return result.data
 
 
+class UpdatePlanBody(BaseModel):
+    name: Optional[str] = None
+    goal: Optional[str] = None
+
+@router.patch("/{plan_id}")
+def update_plan(plan_id: str, body: UpdatePlanBody, user=Depends(get_current_user)):
+    updates = {}
+    if body.name is not None and body.name.strip():
+        updates["name"] = body.name.strip()
+    if body.goal is not None:
+        updates["goal"] = body.goal if body.goal in VALID_GOALS else None
+    if not updates:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    result = (
+        supabase.table("workout_plans")
+        .update(updates)
+        .eq("id", plan_id)
+        .eq("user_id", user["id"])
+        .execute()
+    )
+    return result.data[0] if result.data else {}
+
+
 @router.delete("/{plan_id}")
 def delete_plan(plan_id: str, user=Depends(get_current_user)):
     result = (

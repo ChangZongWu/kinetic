@@ -13,3 +13,8 @@ kinetic-app/.env
 # General
 .DS_Store
 *.log
+
+# Claude Code local settings (may contain secrets)
+.claude/settings.local.json
+.claude/launch.json
+**/.claude/launch.json
