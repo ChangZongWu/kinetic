@@ -195,7 +195,9 @@ export default function Dashboard() {
   const [logs,          setLogs]          = useState<WorkoutLog[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [previewDay,    setPreviewDay]    = useState<string | null>(null);
-  const [activePlanId,  setActivePlanId]  = useState<string | null>(null);
+  const [activePlanId,  setActivePlanId]  = useState<string | null>(() => {
+    try { return localStorage.getItem('activePlanId'); } catch { return null; }
+  });
   // sessionId → array of configured sets (from workout builder)
   const [sessionSets, setSessionSets] = useState<Record<string, { reps: number | null; weight_kg: number | null }[]>>({});
 
@@ -225,6 +227,7 @@ export default function Dashboard() {
 
   async function switchActivePlan(plan: Plan) {
     setActivePlanId(plan.id);
+    try { localStorage.setItem('activePlanId', plan.id); } catch {}
     setSessionSets({});
     const headers = await getAuthHeaders();
     await fetchSessionSets(plan, headers);
@@ -257,6 +260,7 @@ export default function Dashboard() {
       const targetPlan = loadedPlans.find(p => p.id === currentId) ?? firstPlan;
       if (targetPlan) {
         setActivePlanId(targetPlan.id);
+        try { localStorage.setItem('activePlanId', targetPlan.id); } catch {}
         await fetchSessionSets(targetPlan, headers);
       }
     } finally {
