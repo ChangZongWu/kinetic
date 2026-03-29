@@ -17,6 +17,7 @@ import Svg, {
   Text as SvgText,
 } from 'react-native-svg';
 import { colors } from '../../theme/colors';
+import { fs } from '../../theme/scale';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
@@ -306,74 +307,74 @@ export default function MuscleSelector() {
 const s = StyleSheet.create({
   root:    { flex: 1, backgroundColor: colors.background },
   center:  { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
-  errText: { color: colors.secondary, fontSize: 14 },
+  errText: { color: colors.secondary, fontSize: fs(14) },
   scroll:  { paddingBottom: 32 },
 
   header: {
-    paddingHorizontal: 24, paddingTop: 24, paddingBottom: 12,
+    paddingHorizontal: 24, paddingTop: 26, paddingBottom: 14,
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
   },
-  title:         { fontSize: 36, fontWeight: '900', color: colors.onSurface, letterSpacing: -1, lineHeight: 38 },
-  titleAccent:   { fontSize: 36, fontWeight: '900', color: colors.primaryContainer, letterSpacing: -1, lineHeight: 40 },
-  selectedCount: { fontSize: 9, fontWeight: '700', color: colors.onSurfaceVariant, letterSpacing: 2.5 },
+  title:         { fontSize: fs(36), fontWeight: '900', color: colors.onSurface, letterSpacing: -1, lineHeight: 40 },
+  titleAccent:   { fontSize: fs(36), fontWeight: '900', color: colors.primaryContainer, letterSpacing: -1, lineHeight: 42 },
+  selectedCount: { fontSize: fs(9), fontWeight: '700', color: colors.onSurfaceVariant, letterSpacing: 2.5 },
 
   // Body maps side by side
   mapsRow: {
     flexDirection: 'row', marginHorizontal: 16,
     backgroundColor: colors.surfaceContainer,
     borderRadius: 20, overflow: 'hidden',
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   mapHalf:    { flex: 1, alignItems: 'center' },
-  mapLabel:   { fontSize: 8, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 2, marginBottom: 4 },
+  mapLabel:   { fontSize: fs(8), fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 2, marginBottom: 4 },
   mapDivider: { width: 1, backgroundColor: colors.outlineVariant + '44', marginVertical: 8 },
 
   // Divider
-  dividerRow:  { flexDirection: 'row', alignItems: 'center', marginHorizontal: 24, marginVertical: 20, gap: 10 },
+  dividerRow:  { flexDirection: 'row', alignItems: 'center', marginHorizontal: 24, marginVertical: 22, gap: 10 },
   dividerLine: { flex: 1, height: 1, backgroundColor: colors.outlineVariant + '44' },
-  dividerTxt:  { fontSize: 8, color: colors.onSurfaceVariant, letterSpacing: 2, fontWeight: '700' },
+  dividerTxt:  { fontSize: fs(8), color: colors.onSurfaceVariant, letterSpacing: 2, fontWeight: '700' },
 
   // Muscle list
-  section:      { marginBottom: 20, paddingHorizontal: 24 },
-  sectionTitle: { fontSize: 9, fontWeight: '700', letterSpacing: 3, marginBottom: 8, marginLeft: 2 },
+  section:      { marginBottom: 22, paddingHorizontal: 24 },
+  sectionTitle: { fontSize: fs(9), fontWeight: '700', letterSpacing: 3, marginBottom: 10, marginLeft: 2 },
 
   muscleRow: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: colors.surfaceContainer,
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
-    marginBottom: 5, gap: 12,
+    borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
+    marginBottom: 6, gap: 14,
     borderLeftWidth: 3, borderLeftColor: 'transparent',
   },
   muscleRowActive: { backgroundColor: colors.surfaceContainerHigh },
   iconBox: {
-    width: 32, height: 32, borderRadius: 8,
+    width: 36, height: 36, borderRadius: 10,
     backgroundColor: colors.surfaceContainerHighest,
     alignItems: 'center', justifyContent: 'center',
   },
-  icon:       { fontSize: 14 },
-  muscleName: { flex: 1, fontSize: 14, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 0.5 },
+  icon:       { fontSize: fs(14) },
+  muscleName: { flex: 1, fontSize: fs(14), fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 0.5 },
   check: {
-    width: 22, height: 22, borderRadius: 7,
+    width: 24, height: 24, borderRadius: 8,
     borderWidth: 2, borderColor: colors.outlineVariant,
     alignItems: 'center', justifyContent: 'center',
   },
-  checkMark: { fontSize: 11, color: colors.onPrimaryContainer, fontWeight: '900' },
+  checkMark: { fontSize: fs(11), color: colors.onPrimaryContainer, fontWeight: '900' },
 
   // CTA
   cta: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: colors.surfaceContainerHigh,
     borderTopWidth: 1, borderTopColor: colors.outlineVariant + '44',
-    paddingHorizontal: 20, paddingTop: 14, paddingBottom: 24, gap: 10,
+    paddingHorizontal: 22, paddingTop: 16, paddingBottom: 28, gap: 12,
   },
   ctaInner:    { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  ctaLeft:     { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  ctaCount:    { fontSize: 30, fontWeight: '900', color: colors.primaryContainer, lineHeight: 34 },
+  ctaLeft:     { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  ctaCount:    { fontSize: fs(30), fontWeight: '900', color: colors.primaryContainer, lineHeight: 36 },
   ctaNames:    { flex: 1, gap: 2 },
-  ctaLabel:    { fontSize: 8, fontWeight: '700', color: colors.onSurfaceVariant, letterSpacing: 2 },
-  ctaNamesText:{ fontSize: 11, fontWeight: '700', color: colors.onSurface },
-  ctaBtn:      { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingHorizontal: 20, paddingVertical: 14 },
-  ctaBtnText:  { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: 11, letterSpacing: 1 },
+  ctaLabel:    { fontSize: fs(8), fontWeight: '700', color: colors.onSurfaceVariant, letterSpacing: 2 },
+  ctaNamesText:{ fontSize: fs(11), fontWeight: '700', color: colors.onSurface },
+  ctaBtn:      { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingHorizontal: 22, paddingVertical: 16 },
+  ctaBtnText:  { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: fs(11), letterSpacing: 1 },
   clearBtn:    { alignItems: 'center' },
-  clearBtnText:{ fontSize: 9, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 1.5 },
+  clearBtnText:{ fontSize: fs(9), color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 1.5 },
 });

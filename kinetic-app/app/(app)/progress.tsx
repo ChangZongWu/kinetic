@@ -14,6 +14,7 @@ import { useState, useCallback } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { colors } from '../../theme/colors';
 import { supabase } from '../../lib/supabase';
+import { fs } from '../../theme/scale';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
@@ -149,22 +150,22 @@ const vc = StyleSheet.create({
   barNow:    { backgroundColor: colors.primaryContainer },
   barPast:   { backgroundColor: colors.surfaceContainerHighest },
   barEmpty:  { backgroundColor: colors.surfaceContainerHigh, opacity: 0.5 },
-  barVal:    { fontSize: 6, fontWeight: '800', color: colors.onSurfaceVariant },
+  barVal:    { fontSize: fs(6), fontWeight: '800', color: colors.onSurfaceVariant },
   barValNow: { color: colors.primaryContainer },
-  lbl:       { fontSize: 7, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.5 },
+  lbl:       { fontSize: fs(7), color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.5 },
   lblNow:    { color: colors.primaryContainer },
   baseline:  { height: 1, backgroundColor: colors.outlineVariant + '55', marginTop: 2 },
-  yAxisNote: { fontSize: 7, color: colors.onSurfaceVariant, marginTop: 6, textAlign: 'right' },
+  yAxisNote: { fontSize: fs(7), color: colors.onSurfaceVariant, marginTop: 6, textAlign: 'right' },
   barSelected: { backgroundColor: colors.tertiary },
   lblSelected: { color: colors.tertiary, fontWeight: '900' },
   tooltip: {
     backgroundColor: colors.surfaceContainerHighest,
-    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10,
     alignSelf: 'center', marginBottom: 10, alignItems: 'center',
     borderWidth: 1, borderColor: colors.primaryContainer + '55',
   },
-  tooltipLabel: { fontSize: 9, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 1 },
-  tooltipValue: { fontSize: 16, fontWeight: '900', color: colors.primaryContainer },
+  tooltipLabel: { fontSize: fs(9), color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 1 },
+  tooltipValue: { fontSize: fs(16), fontWeight: '900', color: colors.primaryContainer },
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -356,7 +357,7 @@ function StrengthChart({ points }: { points: { date: string; maxWeight: number; 
 }
 
 const sc = StyleSheet.create({
-  axisLbl: { fontSize: 8, color: colors.onSurfaceVariant, fontWeight: '700' },
+  axisLbl: { fontSize: fs(8), color: colors.onSurfaceVariant, fontWeight: '700' },
 });
 
 // ── Calendar ──────────────────────────────────────────────────────────────────
@@ -433,19 +434,19 @@ function TrainingCalendar({
 }
 
 const cal = StyleSheet.create({
-  monthLabel: { fontSize: 11, fontWeight: '800', color: colors.onSurface, letterSpacing: 1, marginBottom: 12 },
+  monthLabel: { fontSize: fs(11), fontWeight: '800', color: colors.onSurface, letterSpacing: 1, marginBottom: 12 },
   row:        { flexDirection: 'row', marginBottom: 4 },
-  dayHeader:  { flex: 1, textAlign: 'center', fontSize: 8, fontWeight: '700', color: colors.onSurfaceVariant, letterSpacing: 1 },
+  dayHeader:  { flex: 1, textAlign: 'center', fontSize: fs(8), fontWeight: '700', color: colors.onSurfaceVariant, letterSpacing: 1 },
   cell:       { flex: 1, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 6 },
   trainedCell:{ backgroundColor: colors.primaryContainer + '28' },
   todayCell:  { borderWidth: 1.5, borderColor: colors.primaryContainer },
-  dayNum:     { fontSize: 11, color: colors.onSurfaceVariant },
+  dayNum:     { fontSize: fs(11), color: colors.onSurfaceVariant },
   trainedNum: { color: colors.primaryContainer, fontWeight: '800' },
   todayNum:   { color: colors.primaryContainer, fontWeight: '900' },
   trainedDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primaryContainer, marginTop: 1 },
   legend:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   legendDot:  { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: 9, color: colors.onSurfaceVariant },
+  legendText: { fontSize: fs(9), color: colors.onSurfaceVariant },
 });
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -804,13 +805,13 @@ export default function Progress() {
                   {calDayLog ? new Date(calDayLog.logged_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : ''}
                 </Text>
                 {calDayLog?.workout_plans && (
-                  <Text style={{ fontSize: 9, color: colors.primaryContainer, letterSpacing: 1.5, marginTop: 2 }}>
+                  <Text style={{ fontSize: fs(9), color: colors.primaryContainer, letterSpacing: 1.5, marginTop: 2 }}>
                     {calDayLog.workout_plans.name.toUpperCase()}
                   </Text>
                 )}
               </View>
               <TouchableOpacity onPress={() => setCalDayLog(null)}>
-                <Text style={{ fontSize: 20, color: colors.onSurfaceVariant }}>✕</Text>
+                <Text style={{ fontSize: fs(20), color: colors.onSurfaceVariant }}>✕</Text>
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -823,7 +824,7 @@ export default function Progress() {
                   <View style={{ alignItems: 'flex-end', gap: 2 }}>
                     <Text style={styles.logExSets}>{ex.sets}×{ex.avgReps}</Text>
                     {ex.maxWeight > 0 && (
-                      <Text style={{ fontSize: 10, color: colors.onSurfaceVariant }}>
+                      <Text style={{ fontSize: fs(10), color: colors.onSurfaceVariant }}>
                         {ex.maxWeight}{weightUnit} max
                       </Text>
                     )}
@@ -981,139 +982,139 @@ export default function Progress() {
 
 const styles = StyleSheet.create({
   root:  { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 24 },
+  content: { paddingHorizontal: 24, paddingBottom: 48, paddingTop: 28 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   // Header
   headerRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28,
   },
-  pageLabel: { fontSize: 9, color: colors.onSurfaceVariant, letterSpacing: 3, marginBottom: 4 },
-  pageTitle: { fontSize: 32, fontWeight: '900', color: colors.onSurface, letterSpacing: -1 },
+  pageLabel: { fontSize: fs(9), color: colors.onSurfaceVariant, letterSpacing: 3, marginBottom: 4 },
+  pageTitle: { fontSize: fs(32), fontWeight: '900', color: colors.onSurface, letterSpacing: -1 },
   logBtn: {
     backgroundColor: colors.primaryContainer, borderRadius: 50,
-    paddingHorizontal: 16, paddingVertical: 10,
+    paddingHorizontal: 18, paddingVertical: 12,
   },
-  logBtnText: { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: 10, letterSpacing: 1 },
+  logBtnText: { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: fs(10), letterSpacing: 1 },
 
   // Stats
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 28 },
+  statsRow: { flexDirection: 'row', gap: 14, marginBottom: 32 },
   statCard: {
     flex: 1, backgroundColor: colors.surfaceContainer,
-    borderRadius: 16, padding: 16, alignItems: 'center', gap: 4,
+    borderRadius: 16, padding: 18, alignItems: 'center', gap: 6,
   },
-  statNum: { fontSize: 26, fontWeight: '900', color: colors.primaryContainer },
-  statUnit: { fontSize: 8, fontWeight: '600', color: colors.onSurfaceVariant },
-  statLabel: { fontSize: 8, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 2 },
+  statNum: { fontSize: fs(26), fontWeight: '900', color: colors.primaryContainer },
+  statUnit: { fontSize: fs(8), fontWeight: '600', color: colors.onSurfaceVariant },
+  statLabel: { fontSize: fs(8), color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 2 },
 
   // Section
   sectionLabel: {
-    fontSize: 9, fontWeight: '800', color: colors.onSurfaceVariant,
+    fontSize: fs(9), fontWeight: '800', color: colors.onSurfaceVariant,
     letterSpacing: 3, marginBottom: 12,
   },
 
   // Chart
   chartCard: {
     backgroundColor: colors.surfaceContainer,
-    borderRadius: 20, padding: 16, paddingTop: 20, marginBottom: 28,
+    borderRadius: 20, padding: 20, paddingTop: 22, marginBottom: 32,
   },
 
   // Empty
-  emptyState: { alignItems: 'center', paddingVertical: 60, gap: 12 },
-  emptyIcon: { fontSize: 36, color: colors.outlineVariant },
-  emptyTitle: { fontSize: 16, fontWeight: '900', color: colors.onSurface },
+  emptyState: { alignItems: 'center', paddingVertical: 64, gap: 14 },
+  emptyIcon: { fontSize: fs(36), color: colors.outlineVariant },
+  emptyTitle: { fontSize: fs(16), fontWeight: '900', color: colors.onSurface },
   emptyText: {
-    fontSize: 12, color: colors.onSurfaceVariant,
-    textAlign: 'center', maxWidth: 260, lineHeight: 18,
+    fontSize: fs(12), color: colors.onSurfaceVariant,
+    textAlign: 'center', maxWidth: 280, lineHeight: 22,
   },
 
   // Log cards
   logCard: {
     backgroundColor: colors.surfaceContainer,
-    borderRadius: 20, padding: 16, marginBottom: 12,
+    borderRadius: 20, padding: 18, marginBottom: 14,
   },
   logCardHeader: {
     flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'flex-start', marginBottom: 12,
+    alignItems: 'flex-start', marginBottom: 14,
   },
-  logDate: { fontSize: 16, fontWeight: '800', color: colors.onSurface },
-  logPlan: { fontSize: 9, color: colors.primaryContainer, letterSpacing: 1.5, marginTop: 2 },
+  logDate: { fontSize: fs(16), fontWeight: '800', color: colors.onSurface },
+  logPlan: { fontSize: fs(9), color: colors.primaryContainer, letterSpacing: 1.5, marginTop: 2 },
   deleteBtn: { padding: 4 },
-  deleteBtnText: { color: colors.onSurfaceVariant, fontSize: 14 },
+  deleteBtnText: { color: colors.onSurfaceVariant, fontSize: fs(14) },
 
-  logExRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+  logExRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
   logExRowBorder: { borderTopWidth: 1, borderTopColor: colors.outlineVariant + '33' },
-  logExLeft: { flex: 1, gap: 2 },
-  logExName: { fontSize: 13, fontWeight: '700', color: colors.onSurface },
-  logExMuscle: { fontSize: 10, color: colors.onSurfaceVariant },
-  logExSets: { fontSize: 13, fontWeight: '800', color: colors.tertiary },
-  prBadge: { fontSize: 9, fontWeight: '800', color: colors.primaryContainer, letterSpacing: 0.5 },
-  strengthExName: { fontSize: 13, fontWeight: '800', color: colors.onSurface, marginBottom: 2 },
-  strengthExSub:  { fontSize: 10, color: colors.onSurfaceVariant },
+  logExLeft: { flex: 1, gap: 4 },
+  logExName: { fontSize: fs(13), fontWeight: '700', color: colors.onSurface },
+  logExMuscle: { fontSize: fs(10), color: colors.onSurfaceVariant },
+  logExSets: { fontSize: fs(13), fontWeight: '800', color: colors.tertiary },
+  prBadge: { fontSize: fs(9), fontWeight: '800', color: colors.primaryContainer, letterSpacing: 0.5 },
+  strengthExName: { fontSize: fs(13), fontWeight: '800', color: colors.onSurface, marginBottom: 2 },
+  strengthExSub:  { fontSize: fs(10), color: colors.onSurfaceVariant },
 
   logCardFooter: {
     flexDirection: 'row', justifyContent: 'flex-end', gap: 16,
     borderTopWidth: 1, borderTopColor: colors.outlineVariant + '22',
-    marginTop: 8, paddingTop: 8,
+    marginTop: 10, paddingTop: 10,
   },
-  logFooterStat: { fontSize: 10, color: colors.onSurfaceVariant, fontWeight: '600' },
+  logFooterStat: { fontSize: fs(10), color: colors.onSurfaceVariant, fontWeight: '600' },
 
   // Modal
   modalRoot: { flex: 1, backgroundColor: colors.background },
-  modalContent: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 },
+  modalContent: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 48 },
   modalHeader: {
     flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'flex-start', marginBottom: 24,
+    alignItems: 'flex-start', marginBottom: 28,
   },
-  modalTitle: { fontSize: 22, fontWeight: '900', color: colors.onSurface },
-  modalSub: { fontSize: 11, color: colors.onSurfaceVariant, marginTop: 2 },
+  modalTitle: { fontSize: fs(22), fontWeight: '900', color: colors.onSurface },
+  modalSub: { fontSize: fs(11), color: colors.onSurfaceVariant, marginTop: 2 },
   modalCloseBtn: { padding: 4 },
-  modalClose: { fontSize: 20, color: colors.onSurfaceVariant },
+  modalClose: { fontSize: fs(20), color: colors.onSurfaceVariant },
 
   modalExBlock: {
     backgroundColor: colors.surfaceContainer,
-    borderRadius: 16, padding: 16, marginBottom: 16,
+    borderRadius: 18, padding: 18, marginBottom: 18,
   },
-  modalExHeader: { marginBottom: 12 },
-  modalExName: { fontSize: 15, fontWeight: '800', color: colors.onSurface },
-  modalExMuscle: { fontSize: 9, color: colors.primaryContainer, letterSpacing: 1.5, marginTop: 2 },
+  modalExHeader: { marginBottom: 14 },
+  modalExName: { fontSize: fs(15), fontWeight: '800', color: colors.onSurface },
+  modalExMuscle: { fontSize: fs(9), color: colors.primaryContainer, letterSpacing: 1.5, marginTop: 2 },
 
   setColHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6, paddingLeft: 32,
+    flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, paddingLeft: 36,
   },
-  setColLabel: { flex: 1, fontSize: 9, color: colors.onSurfaceVariant, letterSpacing: 1, fontWeight: '700', textAlign: 'center' },
+  setColLabel: { flex: 1, fontSize: fs(9), color: colors.onSurfaceVariant, letterSpacing: 1, fontWeight: '700', textAlign: 'center' },
 
-  setRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  setRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   setNumBadge: {
-    width: 24, height: 24, borderRadius: 12,
+    width: 28, height: 28, borderRadius: 14,
     backgroundColor: colors.surfaceContainerHigh,
     alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
-  setNumText: { fontSize: 10, fontWeight: '800', color: colors.onSurfaceVariant },
+  setNumText: { fontSize: fs(10), fontWeight: '800', color: colors.onSurfaceVariant },
   setInput: {
     flex: 1, backgroundColor: colors.surfaceContainerHigh,
-    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,
-    color: colors.onSurface, fontSize: 16, fontWeight: '700',
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12,
+    color: colors.onSurface, fontSize: fs(16), fontWeight: '700',
     textAlign: 'center', borderWidth: 1, borderColor: colors.outlineVariant,
   },
-  setX: { fontSize: 16, color: colors.onSurfaceVariant, fontWeight: '700' },
-  setKg: { fontSize: 11, color: colors.onSurfaceVariant, width: 20 },
+  setX: { fontSize: fs(16), color: colors.onSurfaceVariant, fontWeight: '700' },
+  setKg: { fontSize: fs(11), color: colors.onSurfaceVariant, width: 24 },
 
   saveBtn: {
     backgroundColor: colors.primaryContainer, borderRadius: 50,
-    paddingVertical: 18, alignItems: 'center', marginTop: 8,
+    paddingVertical: 20, alignItems: 'center', marginTop: 10,
   },
   saveBtnDisabled: { backgroundColor: colors.surfaceContainerHigh },
-  saveBtnText: { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: 12, letterSpacing: 1.5 },
+  saveBtnText: { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: fs(12), letterSpacing: 1.5 },
 
   // Confirm / error modals
   confirmOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 32 },
-  confirmBox: { backgroundColor: colors.surfaceContainerHigh, borderRadius: 24, padding: 28, width: '100%', maxWidth: 360, gap: 8 },
-  confirmTitle: { fontSize: 18, fontWeight: '900', color: colors.onSurface, letterSpacing: -0.5, marginBottom: 4 },
-  confirmBody: { fontSize: 14, color: colors.onSurfaceVariant, lineHeight: 20, marginBottom: 8 },
-  confirmDeleteBtn: { backgroundColor: colors.secondary, borderRadius: 50, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  confirmDeleteTxt: { color: '#fff', fontWeight: '900', fontSize: 12, letterSpacing: 1.5 },
-  confirmCancelBtn: { paddingVertical: 14, alignItems: 'center' },
-  confirmCancelTxt: { color: colors.onSurfaceVariant, fontWeight: '700', fontSize: 12, letterSpacing: 1 },
+  confirmBox: { backgroundColor: colors.surfaceContainerHigh, borderRadius: 24, padding: 32, width: '100%', maxWidth: 400, gap: 10 },
+  confirmTitle: { fontSize: fs(18), fontWeight: '900', color: colors.onSurface, letterSpacing: -0.5, marginBottom: 4 },
+  confirmBody: { fontSize: fs(14), color: colors.onSurfaceVariant, lineHeight: 22, marginBottom: 8 },
+  confirmDeleteBtn: { backgroundColor: colors.secondary, borderRadius: 50, paddingVertical: 18, alignItems: 'center', marginTop: 8 },
+  confirmDeleteTxt: { color: '#fff', fontWeight: '900', fontSize: fs(12), letterSpacing: 1.5 },
+  confirmCancelBtn: { paddingVertical: 16, alignItems: 'center' },
+  confirmCancelTxt: { color: colors.onSurfaceVariant, fontWeight: '700', fontSize: fs(12), letterSpacing: 1 },
 });

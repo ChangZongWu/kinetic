@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { colors } from '../../theme/colors';
+import { fs } from '../../theme/scale';
 
 type Mode = 'login' | 'signup';
 
@@ -198,21 +199,21 @@ const styles = StyleSheet.create({
   },
   heroLogo: {
     color: colors.primaryContainer,
-    fontSize: 22,
+    fontSize: fs(22),
     fontWeight: '900',
     letterSpacing: -0.5,
   },
   heroTitle: {
     color: colors.primaryContainer,
-    fontSize: 52,
+    fontSize: fs(52),
     fontWeight: '900',
     letterSpacing: -2,
-    lineHeight: 56,
+    lineHeight: 60,
     marginTop: 24,
   },
   heroSub: {
     color: colors.onSurfaceVariant,
-    fontSize: 13,
+    fontSize: fs(13),
     letterSpacing: 2,
     textTransform: 'uppercase',
     marginTop: 16,
@@ -224,12 +225,12 @@ const styles = StyleSheet.create({
   },
   heroStatNum: {
     color: colors.primaryContainer,
-    fontSize: 22,
+    fontSize: fs(22),
     fontWeight: '700',
   },
   heroStatLabel: {
     color: colors.onSurfaceVariant,
-    fontSize: 9,
+    fontSize: fs(9),
     letterSpacing: 2,
     textTransform: 'uppercase',
     marginTop: 4,
@@ -260,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryContainer,
   },
   tabText: {
-    fontSize: 10,
+    fontSize: fs(10),
     fontWeight: '700',
     letterSpacing: 2,
     color: colors.onSurfaceVariant,
@@ -269,21 +270,21 @@ const styles = StyleSheet.create({
     color: colors.onPrimaryContainer,
   },
   formTitle: {
-    fontSize: 32,
+    fontSize: fs(32),
     fontWeight: '700',
     color: colors.onSurface,
     marginBottom: 8,
   },
   formSub: {
-    fontSize: 13,
+    fontSize: fs(13),
     color: colors.onSurfaceVariant,
     marginBottom: 32,
   },
   fieldGroup: {
-    marginBottom: 20,
+    marginBottom: 22,
   },
   label: {
-    fontSize: 9,
+    fontSize: fs(9),
     fontWeight: '700',
     letterSpacing: 3,
     color: colors.onSurfaceVariant,
@@ -294,20 +295,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceContainerHighest,
     borderRadius: 16,
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 18,
     color: colors.onSurface,
-    fontSize: 14,
+    fontSize: fs(14),
   } as any,
   errorText: {
     color: colors.secondary,
-    fontSize: 12,
+    fontSize: fs(12),
     marginBottom: 12,
     marginLeft: 4,
   },
   submitBtn: {
     backgroundColor: colors.primaryContainer,
     borderRadius: 50,
-    paddingVertical: 18,
+    paddingVertical: 20,
     alignItems: 'center',
     marginTop: 8,
   },
@@ -317,7 +318,7 @@ const styles = StyleSheet.create({
   submitBtnText: {
     color: colors.onPrimaryContainer,
     fontWeight: '900',
-    fontSize: 12,
+    fontSize: fs(12),
     letterSpacing: 2,
   },
 });

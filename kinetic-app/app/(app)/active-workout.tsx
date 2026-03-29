@@ -12,6 +12,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { colors } from '../../theme/colors';
 import { supabase } from '../../lib/supabase';
+import { fs } from '../../theme/scale';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
@@ -429,7 +430,7 @@ export default function ActiveWorkout() {
       <ScrollView contentContainerStyle={s.doneScroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={s.doneHeader}>
-          <Text style={{ fontSize: 48 }}>🏆</Text>
+          <Text style={{ fontSize: fs(48) }}>🏆</Text>
           <Text style={s.doneTitle}>WORKOUT{'\n'}COMPLETE</Text>
           <Text style={s.doneSub}>{formatTime(summary.elapsed)}</Text>
         </View>
@@ -670,114 +671,114 @@ const s = StyleSheet.create({
   // Top bar
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12,
+    paddingHorizontal: 20, paddingTop: 18, paddingBottom: 14,
     borderBottomWidth: 1, borderBottomColor: colors.outlineVariant + '44',
   },
-  backBtn:     { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  backBtnText: { fontSize: 18, color: colors.onSurfaceVariant },
+  backBtn:     { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  backBtnText: { fontSize: fs(18), color: colors.onSurfaceVariant },
   topCenter:   { alignItems: 'center', gap: 2 },
-  stopwatch:   { fontSize: 28, fontWeight: '900', color: colors.primaryContainer, letterSpacing: -1 },
-  planName:    { fontSize: 8, color: colors.onSurfaceVariant, letterSpacing: 2 },
-  finishBtn:   { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingHorizontal: 16, paddingVertical: 8 },
-  finishBtnText: { fontSize: 10, fontWeight: '900', color: colors.onPrimaryContainer, letterSpacing: 1 },
+  stopwatch:   { fontSize: fs(28), fontWeight: '900', color: colors.primaryContainer, letterSpacing: -1 },
+  planName:    { fontSize: fs(8), color: colors.onSurfaceVariant, letterSpacing: 2 },
+  finishBtn:   { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingHorizontal: 18, paddingVertical: 10 },
+  finishBtnText: { fontSize: fs(10), fontWeight: '900', color: colors.onPrimaryContainer, letterSpacing: 1 },
 
   // Rest banner
   restBanner: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: colors.surfaceContainerHigh,
-    paddingHorizontal: 20, paddingVertical: 12,
+    paddingHorizontal: 22, paddingVertical: 14,
     borderBottomWidth: 1, borderBottomColor: colors.primaryContainer + '33',
   },
   restBannerLeft: { gap: 2 },
-  restLabel:  { fontSize: 8, fontWeight: '800', color: colors.primaryContainer, letterSpacing: 2 },
-  restTime:   { fontSize: 24, fontWeight: '900', color: colors.onSurface, letterSpacing: -1 },
+  restLabel:  { fontSize: fs(8), fontWeight: '800', color: colors.primaryContainer, letterSpacing: 2 },
+  restTime:   { fontSize: fs(24), fontWeight: '900', color: colors.onSurface, letterSpacing: -1 },
   restActions:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  restConfigBtn:  { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  restConfigBtnText: { fontSize: 18, color: colors.onSurfaceVariant },
-  skipRestBtn:    { backgroundColor: colors.surfaceContainerHighest, borderRadius: 50, paddingHorizontal: 14, paddingVertical: 8 },
-  skipRestBtnText: { fontSize: 9, fontWeight: '800', color: colors.onSurface, letterSpacing: 1 },
+  restConfigBtn:  { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  restConfigBtnText: { fontSize: fs(18), color: colors.onSurfaceVariant },
+  skipRestBtn:    { backgroundColor: colors.surfaceContainerHighest, borderRadius: 50, paddingHorizontal: 16, paddingVertical: 10 },
+  skipRestBtnText: { fontSize: fs(9), fontWeight: '800', color: colors.onSurface, letterSpacing: 1 },
 
   // Progress bar
   progressBarBg:   { height: 3, backgroundColor: colors.surfaceContainerHigh, marginHorizontal: 0 },
   progressBarFill: { height: 3, backgroundColor: colors.primaryContainer, borderRadius: 2 },
-  progressText:    { fontSize: 9, color: colors.onSurfaceVariant, letterSpacing: 1.5, textAlign: 'center', paddingVertical: 8, fontWeight: '700' },
+  progressText:    { fontSize: fs(9), color: colors.onSurfaceVariant, letterSpacing: 1.5, textAlign: 'center', paddingVertical: 10, fontWeight: '700' },
 
   // Scroll
-  scrollContent: { paddingHorizontal: 16, paddingTop: 8, gap: 16 },
+  scrollContent: { paddingHorizontal: 18, paddingTop: 10, gap: 18 },
 
   // Exercise block
-  block:       { backgroundColor: colors.surfaceContainer, borderRadius: 16, padding: 16, gap: 8 },
+  block:       { backgroundColor: colors.surfaceContainer, borderRadius: 18, padding: 18, gap: 10 },
   blockHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 },
   blockInfo:   { flex: 1 },
-  blockName:   { fontSize: 16, fontWeight: '800', color: colors.onSurface },
-  blockMeta:   { fontSize: 9, color: colors.onSurfaceVariant, letterSpacing: 0.5, marginTop: 2 },
-  lastRef:     { fontSize: 10, color: colors.primaryContainer + 'cc', fontWeight: '700', marginBottom: 8, letterSpacing: 0.3 },
+  blockName:   { fontSize: fs(16), fontWeight: '800', color: colors.onSurface },
+  blockMeta:   { fontSize: fs(9), color: colors.onSurfaceVariant, letterSpacing: 0.5, marginTop: 2 },
+  lastRef:     { fontSize: fs(10), color: colors.primaryContainer + 'cc', fontWeight: '700', marginBottom: 8, letterSpacing: 0.3 },
 
   // Column headers
   colHeader:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 2, marginBottom: 4 },
-  setNumCol:  { width: 28 },
-  colLbl:     { flex: 1, fontSize: 8, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1.5, textAlign: 'center' },
-  checkCol:   { width: 40 },
+  setNumCol:  { width: 32 },
+  colLbl:     { flex: 1, fontSize: fs(8), fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1.5, textAlign: 'center' },
+  checkCol:   { width: 44 },
 
   // Set row
-  setRow:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  setRow:     { flexDirection: 'row', alignItems: 'center', gap: 10 },
   setRowDone: { opacity: 0.5 },
-  setNum:     { fontSize: 10, fontWeight: '800', color: colors.onSurfaceVariant, textAlign: 'center' },
+  setNum:     { fontSize: fs(10), fontWeight: '800', color: colors.onSurfaceVariant, textAlign: 'center' },
   setNumDone: { color: colors.primaryContainer },
   setInput: {
     flex: 1, backgroundColor: colors.surfaceContainerHigh,
-    borderRadius: 10, paddingHorizontal: 8, paddingVertical: 10,
-    color: colors.onSurface, fontSize: 15, fontWeight: '700',
+    borderRadius: 10, paddingHorizontal: 8, paddingVertical: 12,
+    color: colors.onSurface, fontSize: fs(15), fontWeight: '700',
     textAlign: 'center', borderWidth: 1, borderColor: colors.outlineVariant,
   } as any,
   setInputDone: { borderColor: colors.primaryContainer + '44', backgroundColor: colors.surfaceContainerHighest },
-  checkBtn:     { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: colors.outlineVariant, alignItems: 'center', justifyContent: 'center' },
+  checkBtn:     { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: colors.outlineVariant, alignItems: 'center', justifyContent: 'center' },
   checkBtnDone: { backgroundColor: colors.primaryContainer, borderColor: colors.primaryContainer },
-  checkBtnText: { fontSize: 14, color: colors.outlineVariant },
+  checkBtnText: { fontSize: fs(14), color: colors.outlineVariant },
   checkBtnTextDone: { color: colors.onPrimaryContainer, fontWeight: '800' },
 
   // Add set
-  addSetBtn:     { backgroundColor: colors.surfaceContainerHigh, borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginTop: 4 },
-  addSetBtnText: { fontSize: 9, fontWeight: '800', color: colors.primaryContainer, letterSpacing: 1.5 },
+  addSetBtn:     { backgroundColor: colors.surfaceContainerHigh, borderRadius: 8, paddingVertical: 12, alignItems: 'center', marginTop: 4 },
+  addSetBtnText: { fontSize: fs(9), fontWeight: '800', color: colors.primaryContainer, letterSpacing: 1.5 },
 
   // Modals
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 32 },
-  modalBox:     { backgroundColor: colors.surfaceContainerHigh, borderRadius: 24, padding: 28, width: '100%', maxWidth: 360, gap: 8 },
-  modalTitle:   { fontSize: 20, fontWeight: '900', color: colors.onSurface, letterSpacing: -0.5, marginBottom: 4 },
-  modalBody:    { fontSize: 13, color: colors.onSurfaceVariant, marginBottom: 8 },
-  modalConfirmBtn:  { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  modalConfirmTxt:  { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: 12, letterSpacing: 1.5 },
-  modalCancelBtn:   { paddingVertical: 14, alignItems: 'center' },
-  modalCancelTxt:   { color: colors.onSurfaceVariant, fontWeight: '700', fontSize: 12, letterSpacing: 1 },
+  modalBox:     { backgroundColor: colors.surfaceContainerHigh, borderRadius: 24, padding: 28, width: '100%', maxWidth: 400, gap: 10 },
+  modalTitle:   { fontSize: fs(20), fontWeight: '900', color: colors.onSurface, letterSpacing: -0.5, marginBottom: 4 },
+  modalBody:    { fontSize: fs(13), color: colors.onSurfaceVariant, marginBottom: 8 },
+  modalConfirmBtn:  { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingVertical: 18, alignItems: 'center', marginTop: 8 },
+  modalConfirmTxt:  { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: fs(12), letterSpacing: 1.5 },
+  modalCancelBtn:   { paddingVertical: 16, alignItems: 'center' },
+  modalCancelTxt:   { color: colors.onSurfaceVariant, fontWeight: '700', fontSize: fs(12), letterSpacing: 1 },
 
   // Rest options
   restOptions:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 },
-  restOption:     { flex: 1, minWidth: 60, backgroundColor: colors.surfaceContainerHighest, borderRadius: 10, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.outlineVariant },
+  restOption:     { flex: 1, minWidth: 60, backgroundColor: colors.surfaceContainerHighest, borderRadius: 10, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: colors.outlineVariant },
   restOptionActive: { backgroundColor: colors.primaryContainer, borderColor: colors.primaryContainer },
-  restOptionText: { fontSize: 12, fontWeight: '700', color: colors.onSurfaceVariant },
+  restOptionText: { fontSize: fs(12), fontWeight: '700', color: colors.onSurfaceVariant },
   restOptionTextActive: { color: colors.onPrimaryContainer },
 
   // Done screen
-  doneScroll:   { paddingHorizontal: 24, paddingTop: 48, alignItems: 'center' },
-  doneHeader:   { alignItems: 'center', gap: 8, marginBottom: 32 },
-  doneTitle:    { fontSize: 40, fontWeight: '900', color: colors.onSurface, letterSpacing: -2, textAlign: 'center', lineHeight: 44 },
-  doneSub:      { fontSize: 22, fontWeight: '900', color: colors.primaryContainer, letterSpacing: -0.5 },
-  doneSummaryRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceContainer, borderRadius: 20, padding: 20, width: '100%', marginBottom: 16 },
-  doneStat:     { flex: 1, alignItems: 'center', gap: 4 },
-  doneStatNum:  { fontSize: 28, fontWeight: '900', color: colors.primaryContainer },
-  doneStatLabel:{ fontSize: 8, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1.5 },
-  doneStatDiv:  { width: 1, height: 40, backgroundColor: colors.outlineVariant + '44' },
-  prCallout:    { backgroundColor: colors.primaryContainer + '18', borderRadius: 16, padding: 16, width: '100%', marginBottom: 16, gap: 6, borderWidth: 1, borderColor: colors.primaryContainer + '44' },
-  prCalloutTitle:{ fontSize: 11, fontWeight: '900', color: colors.primaryContainer, letterSpacing: 1 },
-  prCalloutItem: { fontSize: 13, fontWeight: '700', color: colors.onSurface },
-  doneBreakdownLabel: { fontSize: 9, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 3, alignSelf: 'flex-start', marginBottom: 10 },
-  doneBreakdownCard: { backgroundColor: colors.surfaceContainer, borderRadius: 16, width: '100%', marginBottom: 24, overflow: 'hidden' },
-  doneExRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
+  doneScroll:   { paddingHorizontal: 28, paddingTop: 52, alignItems: 'center' },
+  doneHeader:   { alignItems: 'center', gap: 10, marginBottom: 36 },
+  doneTitle:    { fontSize: fs(40), fontWeight: '900', color: colors.onSurface, letterSpacing: -2, textAlign: 'center', lineHeight: 48 },
+  doneSub:      { fontSize: fs(22), fontWeight: '900', color: colors.primaryContainer, letterSpacing: -0.5 },
+  doneSummaryRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceContainer, borderRadius: 20, padding: 22, width: '100%', marginBottom: 18 },
+  doneStat:     { flex: 1, alignItems: 'center', gap: 6 },
+  doneStatNum:  { fontSize: fs(28), fontWeight: '900', color: colors.primaryContainer },
+  doneStatLabel:{ fontSize: fs(8), fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1.5 },
+  doneStatDiv:  { width: 1, height: 44, backgroundColor: colors.outlineVariant + '44' },
+  prCallout:    { backgroundColor: colors.primaryContainer + '18', borderRadius: 16, padding: 18, width: '100%', marginBottom: 18, gap: 8, borderWidth: 1, borderColor: colors.primaryContainer + '44' },
+  prCalloutTitle:{ fontSize: fs(11), fontWeight: '900', color: colors.primaryContainer, letterSpacing: 1 },
+  prCalloutItem: { fontSize: fs(13), fontWeight: '700', color: colors.onSurface },
+  doneBreakdownLabel: { fontSize: fs(9), fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 3, alignSelf: 'flex-start', marginBottom: 12 },
+  doneBreakdownCard: { backgroundColor: colors.surfaceContainer, borderRadius: 16, width: '100%', marginBottom: 28, overflow: 'hidden' },
+  doneExRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 16 },
   doneExRowBorder: { borderTopWidth: 1, borderTopColor: colors.outlineVariant + '33' },
-  doneExName:   { fontSize: 13, fontWeight: '700', color: colors.onSurface, flex: 1 },
-  doneExSets:   { fontSize: 12, fontWeight: '800', color: colors.primaryContainer },
-  doneBtn:      { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingHorizontal: 32, paddingVertical: 16, marginTop: 8, width: '100%', alignItems: 'center' },
-  doneBtnText:  { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: 12, letterSpacing: 1.5 },
-  doneBtnSec:   { paddingVertical: 12 },
-  doneBtnSecText: { color: colors.onSurfaceVariant, fontWeight: '700', fontSize: 12, letterSpacing: 1 },
+  doneExName:   { fontSize: fs(13), fontWeight: '700', color: colors.onSurface, flex: 1 },
+  doneExSets:   { fontSize: fs(12), fontWeight: '800', color: colors.primaryContainer },
+  doneBtn:      { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingHorizontal: 32, paddingVertical: 18, marginTop: 8, width: '100%', alignItems: 'center' },
+  doneBtnText:  { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: fs(12), letterSpacing: 1.5 },
+  doneBtnSec:   { paddingVertical: 14 },
+  doneBtnSecText: { color: colors.onSurfaceVariant, fontWeight: '700', fontSize: fs(12), letterSpacing: 1 },
 });

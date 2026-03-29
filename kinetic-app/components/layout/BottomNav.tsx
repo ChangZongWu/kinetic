@@ -1,6 +1,7 @@
 ﻿import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { colors } from "../../theme/colors";
+import { fs } from "../../theme/scale";
 
 const navItems = [
   { label: "Home",     href: "/(app)/dashboard",       icon: "◈" },
@@ -40,7 +41,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   item:   { flex: 1, alignItems: "center", gap: 4 },
-  icon:   { fontSize: 18, color: colors.onSurfaceVariant },
-  label:  { fontSize: 9, color: colors.onSurfaceVariant, letterSpacing: 1 },
+  icon:   { fontSize: fs(18), color: colors.onSurfaceVariant },
+  label:  { fontSize: fs(9), color: colors.onSurfaceVariant, letterSpacing: 1 },
   active: { color: colors.primaryContainer },
 });

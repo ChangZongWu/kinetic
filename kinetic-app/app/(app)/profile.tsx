@@ -12,6 +12,7 @@ import { useState, useCallback } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { colors } from '../../theme/colors';
 import { supabase } from '../../lib/supabase';
+import { fs } from '../../theme/scale';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
@@ -339,73 +340,73 @@ function Sep() {
 
 const s = StyleSheet.create({
   root:    { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 24 },
+  content: { paddingHorizontal: 24, paddingBottom: 48, paddingTop: 28 },
   center:  { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  avatarSection: { alignItems: 'center', marginBottom: 36, gap: 6 },
+  avatarSection: { alignItems: 'center', marginBottom: 40, gap: 8 },
   avatar: {
-    width: 84, height: 84, borderRadius: 42,
+    width: 92, height: 92, borderRadius: 46,
     backgroundColor: colors.primaryContainer,
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
-  avatarText: { fontSize: 34, fontWeight: '900', color: colors.onPrimaryContainer },
-  emailText:  { fontSize: 14, color: colors.onSurface, fontWeight: '600' },
-  hint:       { fontSize: 11, color: colors.onSurfaceVariant },
+  avatarText: { fontSize: fs(34), fontWeight: '900', color: colors.onPrimaryContainer },
+  emailText:  { fontSize: fs(14), color: colors.onSurface, fontWeight: '600' },
+  hint:       { fontSize: fs(11), color: colors.onSurfaceVariant },
 
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 28 },
+  statsRow: { flexDirection: 'row', gap: 14, marginBottom: 32 },
   statCard: {
     flex: 1, backgroundColor: colors.surfaceContainer,
-    borderRadius: 16, padding: 16, alignItems: 'center', gap: 4,
+    borderRadius: 16, padding: 18, alignItems: 'center', gap: 6,
   },
-  statNum:   { fontSize: 26, fontWeight: '900', color: colors.primaryContainer },
-  statLabel: { fontSize: 8, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 2 },
+  statNum:   { fontSize: fs(26), fontWeight: '900', color: colors.primaryContainer },
+  statLabel: { fontSize: fs(8), color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 2 },
 
   sectionLabel: {
-    fontSize: 9, fontWeight: '800', color: colors.onSurfaceVariant,
+    fontSize: fs(9), fontWeight: '800', color: colors.onSurfaceVariant,
     letterSpacing: 3, marginBottom: 10, marginTop: 4,
   },
   card: {
     backgroundColor: colors.surfaceContainer,
-    borderRadius: 16, padding: 16, marginBottom: 20,
+    borderRadius: 16, padding: 18, marginBottom: 22,
   },
 
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   unitRow:      { flexDirection: 'row', gap: 10 },
-  restTimerDesc:{ fontSize: 11, color: colors.onSurfaceVariant, marginBottom: 12 },
+  restTimerDesc:{ fontSize: fs(11), color: colors.onSurfaceVariant, marginBottom: 14 },
   restTimerRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   restChip: {
-    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 50,
+    paddingHorizontal: 18, paddingVertical: 12, borderRadius: 50,
     backgroundColor: colors.surfaceContainerHigh,
     borderWidth: 1, borderColor: colors.outlineVariant,
   },
 
   chip: {
     backgroundColor: colors.surfaceContainerHigh,
-    borderRadius: 50, paddingHorizontal: 14, paddingVertical: 9,
+    borderRadius: 50, paddingHorizontal: 16, paddingVertical: 11,
     borderWidth: 1, borderColor: colors.outlineVariant,
   },
   unitChip: {
     flex: 1, backgroundColor: colors.surfaceContainerHigh,
-    borderRadius: 50, paddingVertical: 12, alignItems: 'center',
+    borderRadius: 50, paddingVertical: 14, alignItems: 'center',
     borderWidth: 1, borderColor: colors.outlineVariant,
   },
   chipOn:     { backgroundColor: colors.primaryContainer, borderColor: colors.primaryContainer },
   unitChipOn: { backgroundColor: colors.primaryContainer, borderColor: colors.primaryContainer },
-  chipTxt:    { fontSize: 10, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1 },
+  chipTxt:    { fontSize: fs(10), fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1 },
   chipTxtOn:  { color: colors.onPrimaryContainer },
 
   saveBtn: {
     backgroundColor: colors.primaryContainer, borderRadius: 50,
-    paddingVertical: 18, alignItems: 'center', marginBottom: 12,
+    paddingVertical: 20, alignItems: 'center', marginBottom: 14,
   },
   saveBtnOff: { backgroundColor: colors.surfaceContainerHigh },
-  saveTxt: { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: 12, letterSpacing: 1.5 },
+  saveTxt: { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: fs(12), letterSpacing: 1.5 },
 
   signOutBtn: {
     backgroundColor: colors.surfaceContainer, borderRadius: 50,
-    paddingVertical: 16, alignItems: 'center',
+    paddingVertical: 18, alignItems: 'center',
   },
-  signOutTxt: { color: colors.onSurfaceVariant, fontWeight: '800', fontSize: 11, letterSpacing: 1.5 },
+  signOutTxt: { color: colors.onSurfaceVariant, fontWeight: '800', fontSize: fs(11), letterSpacing: 1.5 },
 
   // Sign-out modal
   modalOverlay: {
@@ -414,35 +415,35 @@ const s = StyleSheet.create({
   },
   modalBox: {
     backgroundColor: colors.surfaceContainerHigh, borderRadius: 24,
-    padding: 28, width: '100%', maxWidth: 360, gap: 8,
+    padding: 32, width: '100%', maxWidth: 400, gap: 10,
   },
-  modalTitle: { fontSize: 20, fontWeight: '900', color: colors.onSurface, letterSpacing: -0.5, marginBottom: 4 },
-  modalBody:  { fontSize: 14, color: colors.onSurfaceVariant, lineHeight: 20, marginBottom: 8 },
+  modalTitle: { fontSize: fs(20), fontWeight: '900', color: colors.onSurface, letterSpacing: -0.5, marginBottom: 4 },
+  modalBody:  { fontSize: fs(14), color: colors.onSurfaceVariant, lineHeight: 22, marginBottom: 8 },
   modalConfirmBtn: {
     backgroundColor: colors.secondary, borderRadius: 50,
-    paddingVertical: 16, alignItems: 'center', marginTop: 8,
+    paddingVertical: 18, alignItems: 'center', marginTop: 8,
   },
-  modalConfirmTxt: { color: '#fff', fontWeight: '900', fontSize: 12, letterSpacing: 1.5 },
-  modalCancelBtn:  { paddingVertical: 14, alignItems: 'center' },
-  modalCancelTxt:  { color: colors.onSurfaceVariant, fontWeight: '700', fontSize: 12, letterSpacing: 1 },
+  modalConfirmTxt: { color: '#fff', fontWeight: '900', fontSize: fs(12), letterSpacing: 1.5 },
+  modalCancelBtn:  { paddingVertical: 16, alignItems: 'center' },
+  modalCancelTxt:  { color: colors.onSurfaceVariant, fontWeight: '700', fontSize: fs(12), letterSpacing: 1 },
 });
 
 const fr = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   label: {
-    width: 130, fontSize: 9, fontWeight: '800',
+    width: 150, fontSize: fs(9), fontWeight: '800',
     color: colors.onSurfaceVariant, letterSpacing: 1.5,
   },
   input: {
     flex: 1,
     color: colors.onSurface,
-    fontSize: 14,
+    fontSize: fs(14),
     fontWeight: '600',
     textAlign: 'right',
     backgroundColor: colors.surfaceContainerHigh,
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: colors.outlineVariant,
   } as any,

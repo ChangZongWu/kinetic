@@ -11,6 +11,7 @@ import { useState, useCallback } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { colors } from '../../theme/colors';
 import { supabase } from '../../lib/supabase';
+import { fs } from '../../theme/scale';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
@@ -155,8 +156,8 @@ function WeeklyChart({ volumes, todayIdx }: { volumes: number[]; todayIdx: numbe
 
 const cs = StyleSheet.create({
   chartMeta:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  chartMetaLabel: { fontSize: 8, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 2 },
-  chartMetaVal:   { fontSize: 13, fontWeight: '900', color: colors.primaryContainer },
+  chartMetaLabel: { fontSize: fs(8), fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 2 },
+  chartMetaVal:   { fontSize: fs(13), fontWeight: '900', color: colors.primaryContainer },
   row:   { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
   col:   { flex: 1, alignItems: 'center', gap: 4 },
   barBg: {
@@ -166,9 +167,9 @@ const cs = StyleSheet.create({
   barFill:     { width: '100%', borderRadius: 6 },
   barActive:   { backgroundColor: colors.primaryContainer },
   barDim:      { backgroundColor: colors.surfaceContainerHighest },
-  barVal:      { fontSize: 6, fontWeight: '800', color: colors.onSurfaceVariant },
+  barVal:      { fontSize: fs(6), fontWeight: '800', color: colors.onSurfaceVariant },
   barValActive:{ color: colors.primaryContainer },
-  lbl:         { fontSize: 7, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.5 },
+  lbl:         { fontSize: fs(7), color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 0.5 },
   lblActive:   { color: colors.primaryContainer },
 });
 
@@ -529,55 +530,55 @@ export default function Dashboard() {
 
 const styles = StyleSheet.create({
   root:    { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 24 },
+  content: { paddingHorizontal: 24, paddingBottom: 48, paddingTop: 28 },
   center:  { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  greetingRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 },
-  greetingLabel: { fontSize: 9, color: colors.onSurfaceVariant, letterSpacing: 3, marginBottom: 4 },
-  greetingName: { fontSize: 32, fontWeight: '900', color: colors.onSurface, letterSpacing: -1 },
+  greetingRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 },
+  greetingLabel: { fontSize: fs(9), color: colors.onSurfaceVariant, letterSpacing: 3, marginBottom: 4 },
+  greetingName: { fontSize: fs(32), fontWeight: '900', color: colors.onSurface, letterSpacing: -1 },
   goalBadge: {
     backgroundColor: colors.primaryContainer + '22', borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: colors.primaryContainer + '44',
     alignItems: 'center', gap: 2,
   },
-  goalBadgeLabel: { color: colors.onSurfaceVariant, fontSize: 7, fontWeight: '700', letterSpacing: 1.5 },
-  goalBadgeText: { color: colors.primaryContainer, fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
+  goalBadgeLabel: { color: colors.onSurfaceVariant, fontSize: fs(7), fontWeight: '700', letterSpacing: 1.5 },
+  goalBadgeText: { color: colors.primaryContainer, fontSize: fs(9), fontWeight: '800', letterSpacing: 1.5 },
 
-  statsRow: { flexDirection: 'row', gap: 8, marginBottom: 28 },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 32 },
   statCard: {
     flex: 1, backgroundColor: colors.surfaceContainer,
-    borderRadius: 14, padding: 12, alignItems: 'center', gap: 4,
+    borderRadius: 16, padding: 16, alignItems: 'center', gap: 6,
   },
-  statNum:   { fontSize: 22, fontWeight: '900', color: colors.primaryContainer },
-  statLabel: { fontSize: 7, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 1.5 },
+  statNum:   { fontSize: fs(22), fontWeight: '900', color: colors.primaryContainer },
+  statLabel: { fontSize: fs(7), color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 1.5 },
 
-  sectionLabel: { fontSize: 9, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 3, marginBottom: 12 },
+  sectionLabel: { fontSize: fs(9), fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 3, marginBottom: 12 },
 
   // Chart
   chartCard: {
     backgroundColor: colors.surfaceContainer, borderRadius: 20,
-    padding: 16, paddingTop: 20, marginBottom: 28,
+    padding: 20, paddingTop: 22, marginBottom: 32,
   },
-  chartEmpty: { fontSize: 11, color: colors.onSurfaceVariant, textAlign: 'center', marginTop: 12, paddingBottom: 4 },
+  chartEmpty: { fontSize: fs(11), color: colors.onSurfaceVariant, textAlign: 'center', marginTop: 12, paddingBottom: 4 },
 
   // Weekly strip
-  weekStrip: { flexGrow: 0, marginBottom: 28, marginHorizontal: -20 },
-  weekStripContent: { paddingHorizontal: 20, gap: 8 },
+  weekStrip: { flexGrow: 0, marginBottom: 32, marginHorizontal: -24 },
+  weekStripContent: { paddingHorizontal: 24, gap: 8 },
   dayCard: {
-    width: 56, paddingVertical: 12, borderRadius: 14,
+    width: 64, paddingVertical: 14, borderRadius: 16,
     backgroundColor: colors.surfaceContainer, alignItems: 'center', gap: 8, position: 'relative',
   },
   dayCardToday: { backgroundColor: colors.surfaceContainerHigh, borderWidth: 1, borderColor: colors.primaryContainer },
-  dayCardLabel: { fontSize: 8, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1 },
+  dayCardLabel: { fontSize: fs(8), fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1 },
   dayCardLabelToday: { color: colors.primaryContainer },
   dayCardDot: {
-    width: 28, height: 28, borderRadius: 50,
+    width: 32, height: 32, borderRadius: 50,
     backgroundColor: colors.surfaceContainerHighest, alignItems: 'center', justifyContent: 'center',
   },
-  dayCardCount: { fontSize: 13, fontWeight: '900', color: colors.onSurface },
+  dayCardCount: { fontSize: fs(13), fontWeight: '900', color: colors.onSurface },
   dayCardCountToday: { color: colors.primaryContainer },
-  dayCardRest: { fontSize: 11, color: colors.outlineVariant },
-  dayCardExLabel: { fontSize: 6, fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1 },
+  dayCardRest: { fontSize: fs(11), color: colors.outlineVariant },
+  dayCardExLabel: { fontSize: fs(6), fontWeight: '800', color: colors.onSurfaceVariant, letterSpacing: 1 },
   dayCardExLabelToday: { color: colors.primaryContainer },
   todayIndicator: {
     position: 'absolute', bottom: 0, left: '50%',
@@ -586,84 +587,84 @@ const styles = StyleSheet.create({
   },
 
   // Today card
-  todayCard: { backgroundColor: colors.surfaceContainer, borderRadius: 20, padding: 20, marginBottom: 28 },
-  todayCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  todayCardDay: { fontSize: 22, fontWeight: '900', color: colors.primaryContainer },
-  todayCardCount: { fontSize: 10, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 1.5 },
-  todayExRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  todayCard: { backgroundColor: colors.surfaceContainer, borderRadius: 20, padding: 22, marginBottom: 32 },
+  todayCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
+  todayCardDay: { fontSize: fs(22), fontWeight: '900', color: colors.primaryContainer },
+  todayCardCount: { fontSize: fs(10), color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 1.5 },
+  todayExRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   todayExRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.outlineVariant + '33' },
-  todayExLeft: { flex: 1, gap: 2 },
-  todayExName: { fontSize: 14, fontWeight: '700', color: colors.onSurface },
-  todayExMeta: { fontSize: 10, color: colors.onSurfaceVariant },
-  todaySets: { fontSize: 13, fontWeight: '800', color: colors.tertiary },
+  todayExLeft: { flex: 1, gap: 4 },
+  todayExName: { fontSize: fs(14), fontWeight: '700', color: colors.onSurface },
+  todayExMeta: { fontSize: fs(10), color: colors.onSurfaceVariant },
+  todaySets: { fontSize: fs(13), fontWeight: '800', color: colors.tertiary },
   startSessionBtn: {
     backgroundColor: colors.primaryContainer, borderRadius: 50,
-    paddingVertical: 16, alignItems: 'center', marginTop: 16,
+    paddingVertical: 18, alignItems: 'center', marginTop: 18,
   },
-  startSessionBtnText: { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: 11, letterSpacing: 1.5 },
+  startSessionBtnText: { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: fs(11), letterSpacing: 1.5 },
 
   restCard: {
-    backgroundColor: colors.surfaceContainer, borderRadius: 20, padding: 24,
-    alignItems: 'center', gap: 8, marginBottom: 28,
+    backgroundColor: colors.surfaceContainer, borderRadius: 20, padding: 28,
+    alignItems: 'center', gap: 8, marginBottom: 32,
   },
-  restCardTitle: { fontSize: 28, fontWeight: '900', color: colors.onSurface },
-  restCardSubtext: { fontSize: 12, color: colors.onSurfaceVariant, marginBottom: 8 },
+  restCardTitle: { fontSize: fs(28), fontWeight: '900', color: colors.onSurface },
+  restCardSubtext: { fontSize: fs(12), color: colors.onSurfaceVariant, marginBottom: 8 },
   buildPlanBtn: {
-    backgroundColor: colors.surfaceContainerHigh, borderRadius: 50, paddingHorizontal: 24, paddingVertical: 12,
+    backgroundColor: colors.surfaceContainerHigh, borderRadius: 50, paddingHorizontal: 28, paddingVertical: 14,
   },
-  buildPlanBtnText: { color: colors.onSurface, fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
+  buildPlanBtnText: { color: colors.onSurface, fontSize: fs(10), fontWeight: '800', letterSpacing: 1.5 },
 
-  planSwitchHint: { fontSize: 9, color: colors.onSurfaceVariant, marginBottom: 10, marginTop: -6 },
+  planSwitchHint: { fontSize: fs(9), color: colors.onSurfaceVariant, marginBottom: 12, marginTop: -6 },
   planRow: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceContainer,
-    borderRadius: 16, padding: 16, marginBottom: 10,
+    borderRadius: 16, padding: 18, marginBottom: 10,
   },
   planRowActive: {
     borderWidth: 1.5, borderColor: colors.primaryContainer,
     backgroundColor: colors.primaryContainer + '12',
   },
-  planRowLeft: { flex: 1, gap: 2 },
-  planRowName: { fontSize: 15, fontWeight: '800', color: colors.onSurface },
+  planRowLeft: { flex: 1, gap: 4 },
+  planRowName: { fontSize: fs(15), fontWeight: '800', color: colors.onSurface },
   planRowNameActive: { color: colors.primaryContainer },
-  planRowGoal: { fontSize: 9, color: colors.primaryContainer, letterSpacing: 1.5 },
+  planRowGoal: { fontSize: fs(9), color: colors.primaryContainer, letterSpacing: 1.5 },
   planRowRight: { alignItems: 'center', paddingHorizontal: 12, gap: 2 },
-  activeBadge: { fontSize: 7, fontWeight: '900', color: colors.onPrimaryContainer, backgroundColor: colors.primaryContainer, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, letterSpacing: 1, marginBottom: 4 },
-  planRowCount: { fontSize: 20, fontWeight: '900', color: colors.onSurface },
-  planRowCountLabel: { fontSize: 8, color: colors.onSurfaceVariant, letterSpacing: 1 },
-  planRowChevron: { fontSize: 24, color: colors.onSurfaceVariant },
+  activeBadge: { fontSize: fs(7), fontWeight: '900', color: colors.onPrimaryContainer, backgroundColor: colors.primaryContainer, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, letterSpacing: 1, marginBottom: 4 },
+  planRowCount: { fontSize: fs(20), fontWeight: '900', color: colors.onSurface },
+  planRowCountLabel: { fontSize: fs(8), color: colors.onSurfaceVariant, letterSpacing: 1 },
+  planRowChevron: { fontSize: fs(24), color: colors.onSurfaceVariant },
 
   nudgeCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: colors.surfaceContainer,
-    borderRadius: 14, padding: 14, marginBottom: 20,
+    borderRadius: 16, padding: 16, marginBottom: 24,
     borderLeftWidth: 3, borderLeftColor: colors.primaryContainer,
   },
-  nudgeIcon: { fontSize: 20 },
-  nudgeText: { flex: 1, fontSize: 13, color: colors.onSurface, lineHeight: 18, fontWeight: '600' },
+  nudgeIcon: { fontSize: 22 },
+  nudgeText: { flex: 1, fontSize: fs(13), color: colors.onSurface, lineHeight: 22, fontWeight: '600' },
 
-  emptyState: { alignItems: 'center', paddingVertical: 40, gap: 10 },
-  emptyStateTitle: { fontSize: 22, fontWeight: '900', color: colors.onSurface },
-  emptyStateText: { fontSize: 12, color: colors.onSurfaceVariant, textAlign: 'center', marginBottom: 8 },
+  emptyState: { alignItems: 'center', paddingVertical: 48, gap: 12 },
+  emptyStateTitle: { fontSize: fs(22), fontWeight: '900', color: colors.onSurface },
+  emptyStateText: { fontSize: fs(12), color: colors.onSurfaceVariant, textAlign: 'center', marginBottom: 8 },
 
   // Day preview modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   modalSheet: {
     backgroundColor: colors.surfaceContainerHigh,
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    padding: 24, paddingBottom: 40, maxHeight: '70%',
+    padding: 28, paddingBottom: 48, maxHeight: '70%',
   },
   sheetHandle: {
     width: 40, height: 4, borderRadius: 2,
-    backgroundColor: colors.outlineVariant, alignSelf: 'center', marginBottom: 20,
+    backgroundColor: colors.outlineVariant, alignSelf: 'center', marginBottom: 24,
   },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
-  modalDayLabel: { fontSize: 28, fontWeight: '900', color: colors.primaryContainer, letterSpacing: -0.5 },
-  modalPlanName: { fontSize: 9, color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 2, marginTop: 2 },
-  modalEditBtn: { fontSize: 11, fontWeight: '800', color: colors.primaryContainer, letterSpacing: 1 },
-  modalEmpty: { fontSize: 13, color: colors.onSurfaceVariant, paddingVertical: 24, textAlign: 'center' },
-  modalExRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
+  modalDayLabel: { fontSize: fs(28), fontWeight: '900', color: colors.primaryContainer, letterSpacing: -0.5 },
+  modalPlanName: { fontSize: fs(9), color: colors.onSurfaceVariant, fontWeight: '700', letterSpacing: 2, marginTop: 2 },
+  modalEditBtn: { fontSize: fs(11), fontWeight: '800', color: colors.primaryContainer, letterSpacing: 1 },
+  modalEmpty: { fontSize: fs(13), color: colors.onSurfaceVariant, paddingVertical: 28, textAlign: 'center' },
+  modalExRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16 },
   modalExRowBorder: { borderTopWidth: 1, borderTopColor: colors.outlineVariant + '33' },
-  modalExName: { fontSize: 15, fontWeight: '800', color: colors.onSurface },
-  modalExMeta: { fontSize: 10, color: colors.onSurfaceVariant, marginTop: 2 },
-  modalExSets: { fontSize: 14, fontWeight: '800', color: colors.tertiary },
+  modalExName: { fontSize: fs(15), fontWeight: '800', color: colors.onSurface },
+  modalExMeta: { fontSize: fs(10), color: colors.onSurfaceVariant, marginTop: 2 },
+  modalExSets: { fontSize: fs(14), fontWeight: '800', color: colors.tertiary },
 });

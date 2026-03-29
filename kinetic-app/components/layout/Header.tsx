@@ -3,6 +3,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "expo-router";
 import { colors } from "../../theme/colors";
 import { supabase } from "../../lib/supabase";
+import { fs } from "../../theme/scale";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -118,7 +119,7 @@ export default function Header() {
 const styles = StyleSheet.create({
   wrapper: { zIndex: 100 },
   header: {
-    height: 60, backgroundColor: colors.background,
+    height: 68, backgroundColor: colors.background,
     flexDirection: "row", alignItems: "center",
     justifyContent: "space-between", paddingHorizontal: 24,
     borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",
@@ -127,24 +128,24 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center",
     backgroundColor: colors.surfaceContainer,
     borderRadius: 50, paddingHorizontal: 16,
-    paddingVertical: 8, flex: 1, maxWidth: 400, gap: 8,
+    paddingVertical: 10, flex: 1, maxWidth: 480, gap: 8,
   },
-  searchIcon:  { fontSize: 13, color: colors.onSurfaceVariant },
+  searchIcon:  { fontSize: fs(13), color: colors.onSurfaceVariant },
   searchInput: {
-    flex: 1, color: colors.onSurface, fontSize: 13, outlineStyle: "none",
+    flex: 1, color: colors.onSurface, fontSize: fs(13), outlineStyle: "none",
   } as any,
   clearBtn:     { padding: 2 },
-  clearBtnText: { fontSize: 11, color: colors.onSurfaceVariant },
+  clearBtnText: { fontSize: fs(11), color: colors.onSurfaceVariant },
   avatar: {
-    width: 34, height: 34, borderRadius: 17,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: colors.primaryContainer,
     alignItems: "center", justifyContent: "center",
     marginLeft: 16,
   },
-  avatarText: { color: colors.onPrimaryContainer, fontWeight: "900", fontSize: 14 },
+  avatarText: { color: colors.onPrimaryContainer, fontWeight: "900", fontSize: fs(15) },
 
   dropdown: {
-    position: "absolute", top: 60, left: 24, right: 24,
+    position: "absolute", top: 68, left: 24, right: 24,
     backgroundColor: colors.surfaceContainerHigh,
     borderRadius: 16, overflow: "hidden",
     borderWidth: 1, borderColor: colors.outlineVariant,
@@ -154,11 +155,11 @@ const styles = StyleSheet.create({
   },
   resultRow: {
     flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 16, paddingVertical: 12,
+    paddingHorizontal: 16, paddingVertical: 14,
   },
   resultLeft:  { flex: 1, gap: 2 },
-  resultName:  { fontSize: 14, fontWeight: "700", color: colors.onSurface },
-  resultMeta:  { fontSize: 10, color: colors.onSurfaceVariant },
-  resultDiff:  { fontSize: 8, fontWeight: "800", color: colors.primaryContainer, letterSpacing: 1 },
+  resultName:  { fontSize: fs(14), fontWeight: "700", color: colors.onSurface },
+  resultMeta:  { fontSize: fs(10), color: colors.onSurfaceVariant },
+  resultDiff:  { fontSize: fs(8), fontWeight: "800", color: colors.primaryContainer, letterSpacing: 1 },
   sep:         { height: 1, backgroundColor: colors.outlineVariant + "33", marginHorizontal: 16 },
 });

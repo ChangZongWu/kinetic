@@ -1,6 +1,7 @@
 ﻿import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { colors } from "../../theme/colors";
+import { fs, SIDEBAR_WIDTH } from "../../theme/scale";
 
 const navItems = [
   { label: "DASHBOARD",       href: "/(app)/dashboard",       icon: "◈" },
@@ -51,7 +52,7 @@ export default function Sidebar() {
 
 const styles = StyleSheet.create({
   sidebar: {
-    width: 220,
+    width: SIDEBAR_WIDTH,
     backgroundColor: colors.background,
     borderRightWidth: 1,
     borderRightColor: "rgba(255,255,255,0.06)",
@@ -62,22 +63,22 @@ const styles = StyleSheet.create({
   },
   logoArea: { paddingHorizontal: 24, marginBottom: 40 },
   logo: {
-    fontSize: 22, fontWeight: "900",
+    fontSize: fs(22), fontWeight: "900",
     color: colors.primaryContainer, letterSpacing: -0.5,
   },
   tagline: {
-    fontSize: 9, color: colors.onSurfaceVariant,
+    fontSize: fs(9), color: colors.onSurfaceVariant,
     letterSpacing: 3, marginTop: 2,
   },
   nav: { flex: 1 },
   navItem: {
     flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 24, paddingVertical: 14,
+    paddingHorizontal: 24, paddingVertical: 16,
     position: "relative", gap: 12,
   },
   navItemActive: { backgroundColor: colors.surfaceContainer },
-  navIcon:  { fontSize: 14, color: colors.onSurfaceVariant },
-  navLabel: { fontSize: 10, fontWeight: "700", color: colors.onSurfaceVariant, letterSpacing: 2 },
+  navIcon:  { fontSize: fs(14), color: colors.onSurfaceVariant },
+  navLabel: { fontSize: fs(10), fontWeight: "700", color: colors.onSurfaceVariant, letterSpacing: 2 },
   navTextActive: { color: colors.primaryContainer },
   activeBorder: {
     position: "absolute", right: 0, top: 0, bottom: 0,
@@ -86,10 +87,10 @@ const styles = StyleSheet.create({
   startBtn: {
     marginHorizontal: 16, marginTop: 24,
     backgroundColor: colors.primaryContainer,
-    paddingVertical: 14, borderRadius: 50, alignItems: "center",
+    paddingVertical: 16, borderRadius: 50, alignItems: "center",
   },
   startBtnText: {
     color: colors.onPrimaryContainer,
-    fontWeight: "900", fontSize: 11, letterSpacing: 1,
+    fontWeight: "900", fontSize: fs(11), letterSpacing: 1,
   },
 });
