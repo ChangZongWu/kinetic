@@ -420,11 +420,11 @@ export default function WorkoutBuilder() {
           <Text style={[s.pageTitle, isMobile && s.pageTitleMobile]}>WORKOUT</Text>
           <Text style={[s.pageTitleAccent, isMobile && s.pageTitleMobile]}>BUILDER</Text>
         </View>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TouchableOpacity style={s.templateBtn} onPress={() => setShowTemplatesModal(true)}>
+        <View style={{ flexDirection: 'row', gap: isMobile ? 6 : 8 }}>
+          <TouchableOpacity style={[s.templateBtn, isMobile && s.btnMobile]} onPress={() => setShowTemplatesModal(true)}>
             <Text style={s.templateBtnText}>{isMobile ? 'TPL' : 'TEMPLATES'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.newPlanBtn} onPress={() => setShowNewPlanModal(true)}>
+          <TouchableOpacity style={[s.newPlanBtn, isMobile && s.btnMobile]} onPress={() => setShowNewPlanModal(true)}>
             <Text style={s.newPlanBtnText}>+ NEW</Text>
           </TouchableOpacity>
         </View>
@@ -728,6 +728,7 @@ const s = StyleSheet.create({
   newPlanBtnText:   { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: fs(10), letterSpacing: 1 },
   templateBtn:      { backgroundColor: colors.surfaceContainerHigh, borderRadius: 50, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: colors.outlineVariant },
   templateBtnText:  { color: colors.onSurface, fontWeight: '800', fontSize: fs(10), letterSpacing: 1 },
+  btnMobile:        { paddingHorizontal: 12, paddingVertical: 8 },
 
   // Template modal
   templateCard: {
