@@ -106,6 +106,7 @@ export default function ActiveWorkout() {
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);
   const [finished, setFinished]   = useState(false);
+  const [isRestDay, setIsRestDay] = useState(false);
   const [units, setUnits]         = useState<'metric' | 'imperial'>(_savedUnits);
   // Last session weights: exerciseId → { weight, reps } (always in kg)
   const [lastWeights, setLastWeights] = useState<Record<string, { weight: number; reps: number }>>({});
@@ -182,7 +183,13 @@ export default function ActiveWorkout() {
 
       const day = params.day ?? getTodayDay();
       const sessions = target.plan_sessions.filter(s => s.day_of_week === day);
-      const useSessions = sessions.length > 0 ? sessions : target.plan_sessions.slice(0, 6);
+      if (sessions.length === 0) {
+        setPlan(target);
+        setIsRestDay(true);
+        setLoading(false);
+        return;
+      }
+      const useSessions = sessions;
 
       // Fetch actual configured sets for each session in parallel
       const sessionSetsMap: Record<string, SessionSet[]> = {};
@@ -420,6 +427,28 @@ export default function ActiveWorkout() {
 
   if (loading) {
     return <View style={s.center}><ActivityIndicator color={colors.primaryContainer} size="large" /></View>;
+  }
+
+  if (isRestDay) {
+    const todayDay = getTodayDay();
+    return (
+      <View style={[s.center, { gap: 16, paddingHorizontal: 32 }]}>
+        <Text style={{ fontSize: fs(48) }}>😴</Text>
+        <Text style={[s.doneTitle, { textAlign: 'center', fontSize: fs(32) }]}>REST DAY</Text>
+        <Text style={{ fontSize: fs(13), color: colors.onSurfaceVariant, textAlign: 'center', lineHeight: 22 }}>
+          {todayDay} is not scheduled in your plan.{'\n'}Recovery is part of performance.
+        </Text>
+        <TouchableOpacity
+          style={[s.doneBtn, { marginTop: 8 }]}
+          onPress={() => router.push('/(app)/workout-builder' as any)}
+        >
+          <Text style={s.doneBtnText}>ADD EXERCISES TO TODAY</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={s.doneBtnSec} onPress={() => router.back()}>
+          <Text style={s.doneBtnSecText}>GO BACK</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   if (finished && summary) {
