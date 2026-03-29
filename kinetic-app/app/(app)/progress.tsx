@@ -505,7 +505,11 @@ export default function Progress() {
   }
 
   function openModal() {
-    const activePlan = plans[0] ?? null;
+    // Use the same active plan the dashboard uses
+    let savedId: string | null = null;
+    try { savedId = localStorage.getItem('activePlanId'); } catch {}
+    const activePlan = (savedId ? plans.find(p => p.id === savedId) : null) ?? plans[0] ?? null;
+
     if (!activePlan) {
       setInfoModal({ title: 'NO PLAN', body: 'Create a workout plan first in the Workout Builder.' });
       return;
@@ -513,7 +517,13 @@ export default function Progress() {
 
     const today = getTodayDay();
     const todaySessions = activePlan.plan_sessions.filter(s => s.day_of_week === today);
-    const sessions = todaySessions.length > 0 ? todaySessions : activePlan.plan_sessions;
+
+    if (todaySessions.length === 0) {
+      setInfoModal({ title: 'REST DAY', body: `${today} is not scheduled in your plan. Use the Active Workout screen on a training day to log your session.` });
+      return;
+    }
+
+    const sessions = todaySessions;
 
     // Deduplicate by exercise id
     const seen = new Set<string>();
