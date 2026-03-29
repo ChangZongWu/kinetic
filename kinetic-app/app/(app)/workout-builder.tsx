@@ -541,7 +541,6 @@ export default function WorkoutBuilder() {
                           <View style={s.setsColHeader}>
                             <View style={s.setNumCol} />
                             <Text style={s.setsColLbl}>REPS</Text>
-                            <View style={{ width: 20 }} />
                             <Text style={s.setsColLbl}>WEIGHT ({builderUnits === 'imperial' ? 'LBS' : 'KG'})</Text>
                             <Text style={s.setsColLblDel}>DEL</Text>
                           </View>
@@ -562,7 +561,6 @@ export default function WorkoutBuilder() {
                                   placeholderTextColor={colors.outlineVariant}
                                   selectTextOnFocus
                                 />
-                                <Text style={s.setX}>·</Text>
                                 <TextInput
                                   style={s.setInput}
                                   value={vals.weight}
