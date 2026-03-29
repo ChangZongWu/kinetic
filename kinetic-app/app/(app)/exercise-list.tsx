@@ -153,7 +153,7 @@ function CreateExerciseModal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={[styles.modalSheet, isMobile && styles.modalSheetMobile]}>
-          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ width: '100%' }}>
             <View style={styles.sheetHandle} />
             <Text style={styles.createTitle}>NEW EXERCISE</Text>
             <Text style={styles.createMuscle}>{muscleName?.toUpperCase()}</Text>
@@ -322,7 +322,7 @@ export default function ExerciseList() {
             onChangeText={setSearch}
           />
         </View>
-        <View style={styles.filterRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
           {[null, 'beginner', 'intermediate', 'advanced'].map(d => (
             <TouchableOpacity
               key={d ?? 'all'}
@@ -334,7 +334,7 @@ export default function ExerciseList() {
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       </View>
 
       {/* List */}
@@ -437,7 +437,7 @@ export default function ExerciseList() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ width: '100%' }}>
               {/* Close handle */}
               <View style={styles.sheetHandle} />
 
@@ -518,7 +518,7 @@ export default function ExerciseList() {
 }
 
 const styles = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: colors.background },
+  root:   { flex: 1, backgroundColor: colors.background, overflow: 'hidden' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
   errorText: { color: colors.secondary, fontSize: fs(14) },
   emptyText: { color: colors.onSurfaceVariant, fontSize: fs(13) },
