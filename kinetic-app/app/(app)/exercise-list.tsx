@@ -9,6 +9,9 @@ import {
   ScrollView,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useState, useMemo } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -94,6 +97,8 @@ function CreateExerciseModal({
   onCreated: () => void;
 }) {
   const firstMuscleId = muscleId?.split(',')[0] ?? '';
+  const { width } = useWindowDimensions();
+  const isMobile = width < 700;
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [difficulty, setDifficulty] = useState('beginner');
@@ -143,8 +148,11 @@ function CreateExerciseModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalSheet}>
+      <KeyboardAvoidingView
+        style={styles.modalOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={[styles.modalSheet, isMobile && styles.modalSheetMobile]}>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <View style={styles.sheetHandle} />
             <Text style={styles.createTitle}>NEW EXERCISE</Text>
@@ -152,7 +160,7 @@ function CreateExerciseModal({
 
             <Text style={styles.fieldLabel}>NAME</Text>
             <TextInput
-              style={styles.fieldInput}
+              style={[styles.fieldInput, isMobile && styles.fieldInputMobile]}
               placeholder="e.g. Cable Crossover"
               placeholderTextColor={colors.outlineVariant}
               value={name}
@@ -161,7 +169,7 @@ function CreateExerciseModal({
 
             <Text style={styles.fieldLabel}>DESCRIPTION</Text>
             <TextInput
-              style={[styles.fieldInput, styles.fieldInputMulti]}
+              style={[styles.fieldInput, isMobile && styles.fieldInputMobile, styles.fieldInputMulti]}
               placeholder="Brief description..."
               placeholderTextColor={colors.outlineVariant}
               value={description}
@@ -201,10 +209,10 @@ function CreateExerciseModal({
             </View>
 
             <View style={styles.rowFields}>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.fieldLabel}>SETS</Text>
                 <TextInput
-                  style={styles.fieldInput}
+                  style={[styles.fieldInput, isMobile && styles.fieldInputMobile]}
                   placeholder="3"
                   placeholderTextColor={colors.outlineVariant}
                   value={sets}
@@ -212,10 +220,10 @@ function CreateExerciseModal({
                   keyboardType="numeric"
                 />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.fieldLabel}>REPS</Text>
                 <TextInput
-                  style={styles.fieldInput}
+                  style={[styles.fieldInput, isMobile && styles.fieldInputMobile]}
                   placeholder="10-12"
                   placeholderTextColor={colors.outlineVariant}
                   value={reps}
@@ -237,7 +245,7 @@ function CreateExerciseModal({
             </TouchableOpacity>
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -592,6 +600,10 @@ const styles = StyleSheet.create({
     padding: 28,
     maxHeight: '85%',
   },
+  modalSheetMobile: {
+    maxHeight: '92%',
+    padding: 20,
+  },
   sheetHandle: {
     width: 40, height: 4, borderRadius: 2,
     backgroundColor: colors.outlineVariant,
@@ -637,6 +649,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceContainerHighest,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
     color: colors.onSurface, fontSize: fs(14),
+  } as any,
+  fieldInputMobile: {
+    paddingVertical: 18,
+    fontSize: fs(16),
+    borderRadius: 14,
   } as any,
   fieldInputMulti: { minHeight: 64, textAlignVertical: 'top' } as any,
   optionRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
