@@ -200,11 +200,9 @@ export default function WorkoutBuilder() {
   // ── Fetch inline sets when day/exercises change ───────────────────────────────
 
   useEffect(() => {
-    if (dayExercises.length === 0) {
-      setDaySets({});
-      setSetInputs({});
-      return;
-    }
+    setDaySets({});
+    setSetInputs({});
+    if (dayExercises.length === 0) return;
     fetchDaySets(dayExercises);
   }, [activeDay, activePlanId, plans.length]);
 
@@ -534,9 +532,7 @@ export default function WorkoutBuilder() {
 
                   {/* Sets — inline, always visible */}
                   {daySetsLoading && sets.length === 0 ? (
-                    <Text style={s.loadingHint}>
-                      {session.exercises.sets_suggestion ?? 3} sets × {session.exercises.reps_suggestion ?? '10'} reps
-                    </Text>
+                    <Text style={s.loadingHint}>Loading...</Text>
                   ) : (
                     <>
                       {sets.length > 0 && (
