@@ -186,13 +186,17 @@ function getTodayDay(): string {
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
+  const localDateStr = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const dateStr = localDateStr(date);
+  if (dateStr === localDateStr(today)) return 'Today';
+  if (dateStr === localDateStr(yesterday)) return 'Yesterday';
+  const diffDays = Math.round((today.setHours(0,0,0,0) - date.setHours(0,0,0,0)) / 86400000);
   if (diffDays < 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function getWeekStart(): Date {
