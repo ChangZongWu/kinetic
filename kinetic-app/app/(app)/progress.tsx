@@ -504,7 +504,7 @@ export default function Progress() {
     }
   }
 
-  function openModal() {
+  async function openModal() {
     // Use the same active plan the dashboard uses
     let savedId: string | null = null;
     try { savedId = localStorage.getItem('activePlanId'); } catch {}
@@ -525,26 +525,39 @@ export default function Progress() {
 
     const sessions = todaySessions;
 
-    // Deduplicate by exercise id
+    // Deduplicate by exercise id (keep session reference for set fetching)
     const seen = new Set<string>();
     const exercises: PlanExercise[] = [];
+    const sessionByExercise: Record<string, typeof sessions[0]> = {};
     for (const s of sessions) {
       if (s.exercises?.id && !seen.has(s.exercises.id)) {
         seen.add(s.exercises.id);
         exercises.push(s.exercises);
+        sessionByExercise[s.exercises.id] = s;
       }
     }
 
-    // Build set inputs pre-filled with suggested reps, empty weight
+    // Fetch actual configured sets from workout builder for each session
+    const headers = await getAuthHeaders();
     const inputs: Record<string, { reps: string; weight: string }[]> = {};
-    for (const ex of exercises) {
-      const count = ex.sets_suggestion ?? 3;
-      const defaultReps = ex.reps_suggestion?.split('-')[0]?.trim() ?? '';
-      inputs[ex.id] = Array.from({ length: count }, () => ({
-        reps: defaultReps,
-        weight: '',
-      }));
-    }
+    await Promise.all(exercises.map(async ex => {
+      const session = sessionByExercise[ex.id];
+      const res = await fetch(`${API_URL}/plans/${activePlan.id}/sessions/${session.id}/sets`, { headers });
+      const configuredSets: { reps: number | null; weight_kg: number | null }[] = res.ok ? await res.json() : [];
+
+      if (configuredSets.length > 0) {
+        // Use the actual configured sets from the builder
+        inputs[ex.id] = configuredSets.map(s => ({
+          reps: s.reps != null ? String(s.reps) : ex.reps_suggestion?.split('-')[0]?.trim() ?? '',
+          weight: '',
+        }));
+      } else {
+        // Fall back to exercise suggestion if no sets configured
+        const count = ex.sets_suggestion ?? 3;
+        const defaultReps = ex.reps_suggestion?.split('-')[0]?.trim() ?? '';
+        inputs[ex.id] = Array.from({ length: count }, () => ({ reps: defaultReps, weight: '' }));
+      }
+    }));
 
     setModalExercises(exercises);
     setSetInputs(inputs);
