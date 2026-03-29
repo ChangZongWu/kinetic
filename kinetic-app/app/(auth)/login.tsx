@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -20,6 +21,8 @@ type Mode = 'login' | 'signup';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isMobile = width < 700;
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,9 +67,9 @@ export default function LoginScreen() {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        {/* Left hero panel — only visible on wide screens */}
-        <View style={styles.hero}>
+      <ScrollView contentContainerStyle={[styles.scroll, isMobile && styles.scrollMobile]} keyboardShouldPersistTaps="handled">
+        {/* Left hero panel — hidden on mobile */}
+        {!isMobile && <View style={styles.hero}>
           <Text style={styles.heroLogo}>KINETIC</Text>
           <Text style={styles.heroTitle}>PERFORMANCE.{'\n'}UNLOCKED.</Text>
           <Text style={styles.heroSub}>AI-powered workout planning{'\n'}built for peak athletes.</Text>
@@ -80,10 +83,10 @@ export default function LoginScreen() {
               <Text style={styles.heroStatLabel}>AI{'\n'}OPTIMIZATION</Text>
             </View>
           </View>
-        </View>
+        </View>}
 
         {/* Form panel */}
-        <View style={styles.formPanel}>
+        <View style={[styles.formPanel, isMobile && styles.formPanelMobile]}>
           {/* Tab switcher */}
           <View style={styles.tabRow}>
             <TouchableOpacity
@@ -236,6 +239,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
+  scrollMobile: {
+    flexDirection: 'column',
+  },
+
   // Form panel (right side)
   formPanel: {
     flex: 1,
@@ -243,6 +250,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceContainer,
     padding: 48,
     justifyContent: 'center',
+  },
+  formPanelMobile: {
+    padding: 32,
+    minWidth: 0,
+    width: '100%',
   },
   tabRow: {
     flexDirection: 'row',
