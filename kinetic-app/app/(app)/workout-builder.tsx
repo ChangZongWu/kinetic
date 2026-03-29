@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   TextInput,
+  useWindowDimensions,
 } from 'react-native';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -126,6 +127,8 @@ const TEMPLATES: TemplateDefinition[] = [
 
 export default function WorkoutBuilder() {
   const router  = useRouter();
+  const { width } = useWindowDimensions();
+  const isMobile = width < 600;
   const params  = useLocalSearchParams<{ addExerciseId?: string; addDay?: string; addPlanId?: string; jumpDay?: string }>();
 
   const [plans,              setPlans]              = useState<Plan[]>([]);
@@ -416,12 +419,12 @@ export default function WorkoutBuilder() {
       {/* Page header */}
       <View style={s.pageHeader}>
         <View style={s.headerLeft}>
-          <Text style={s.pageTitle}>WORKOUT</Text>
-          <Text style={s.pageTitleAccent}>BUILDER</Text>
+          <Text style={[s.pageTitle, isMobile && s.pageTitleMobile]}>WORKOUT</Text>
+          <Text style={[s.pageTitleAccent, isMobile && s.pageTitleMobile]}>BUILDER</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity style={s.templateBtn} onPress={() => setShowTemplatesModal(true)}>
-            <Text style={s.templateBtnText}>TEMPLATES</Text>
+            <Text style={s.templateBtnText}>{isMobile ? 'TPL' : 'TEMPLATES'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.newPlanBtn} onPress={() => setShowNewPlanModal(true)}>
             <Text style={s.newPlanBtnText}>+ NEW</Text>
@@ -716,7 +719,7 @@ export default function WorkoutBuilder() {
 // ── Styles ─────────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: colors.background },
+  root:   { flex: 1, backgroundColor: colors.background, overflow: 'hidden' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
 
   pageHeader: {
@@ -726,6 +729,7 @@ const s = StyleSheet.create({
   headerLeft:       { flexDirection: 'row', gap: 6, alignItems: 'flex-end' },
   pageTitle:        { fontSize: fs(28), fontWeight: '900', color: colors.onSurface, letterSpacing: -1 },
   pageTitleAccent:  { fontSize: fs(28), fontWeight: '900', color: colors.primaryContainer, letterSpacing: -1 },
+  pageTitleMobile:  { fontSize: fs(20) },
   newPlanBtn:       { backgroundColor: colors.primaryContainer, borderRadius: 50, paddingHorizontal: 16, paddingVertical: 10 },
   newPlanBtnText:   { color: colors.onPrimaryContainer, fontWeight: '900', fontSize: fs(10), letterSpacing: 1 },
   templateBtn:      { backgroundColor: colors.surfaceContainerHigh, borderRadius: 50, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: colors.outlineVariant },

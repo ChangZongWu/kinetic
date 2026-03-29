@@ -1064,7 +1064,7 @@ const styles = StyleSheet.create({
   logFooterStat: { fontSize: fs(10), color: colors.onSurfaceVariant, fontWeight: '600' },
 
   // Modal
-  modalRoot: { flex: 1, backgroundColor: colors.background },
+  modalRoot: { flex: 1, backgroundColor: colors.background, overflow: 'hidden' },
   modalContent: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 48 },
   modalHeader: {
     flexDirection: 'row', justifyContent: 'space-between',
@@ -1084,7 +1084,7 @@ const styles = StyleSheet.create({
   modalExMuscle: { fontSize: fs(9), color: colors.primaryContainer, letterSpacing: 1.5, marginTop: 2 },
 
   setColHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, paddingLeft: 36,
+    flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8,
   },
   setColLabel: { flex: 1, fontSize: fs(9), color: colors.onSurfaceVariant, letterSpacing: 1, fontWeight: '700', textAlign: 'center' },
 
