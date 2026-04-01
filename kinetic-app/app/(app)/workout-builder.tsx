@@ -457,7 +457,7 @@ export default function WorkoutBuilder() {
       {activePlan && (
         <>
           {/* Plan meta */}
-          <View style={[s.planActions, isMobile && s.planActionsMobile]}>
+          <View style={s.planActions}>
             <TouchableOpacity
               style={s.renamePlanRow}
               onPress={() => { setRenamingPlanId(activePlan.id); setRenameText(activePlan.name); }}
@@ -758,8 +758,7 @@ const s = StyleSheet.create({
   planTabGoalActive: { color: colors.onPrimaryContainer + 'aa' },
   noPlansText:    { color: colors.onSurfaceVariant, fontSize: fs(13), paddingVertical: 8 },
 
-  planActions:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingVertical: 10 },
-  planActionsMobile: { flexDirection: 'column', alignItems: 'flex-start', gap: 6 },
+  planActions:       { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', paddingHorizontal: 22, paddingVertical: 10, gap: 8 },
   renamePlanRow:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
   planActionsLabel:  { fontSize: fs(11), color: colors.onSurfaceVariant },
   renameBadge:     { backgroundColor: colors.primaryContainer + '22', borderRadius: 50, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1, borderColor: colors.primaryContainer + '44' },
@@ -788,7 +787,7 @@ const s = StyleSheet.create({
   emptyDaySubtext: { fontSize: fs(11), color: colors.outlineVariant, letterSpacing: 1 },
 
   // Exercise card
-  card:       { backgroundColor: colors.surfaceContainer, borderRadius: 18, padding: 18, gap: 14 },
+  card:       { backgroundColor: colors.surfaceContainer, borderRadius: 18, padding: 14, gap: 12 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start' },
   cardInfo:   { flex: 1, gap: 4 },
   cardName:   { fontSize: fs(16), fontWeight: '800', color: colors.onSurface },
