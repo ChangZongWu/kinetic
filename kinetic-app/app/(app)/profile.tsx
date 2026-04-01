@@ -431,11 +431,12 @@ const s = StyleSheet.create({
 const fr = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   label: {
-    width: 150, fontSize: fs(9), fontWeight: '800',
+    width: 150, flexShrink: 0, fontSize: fs(9), fontWeight: '800',
     color: colors.onSurfaceVariant, letterSpacing: 1.5,
   },
   input: {
     flex: 1,
+    minWidth: 0,
     color: colors.onSurface,
     fontSize: fs(14),
     fontWeight: '600',

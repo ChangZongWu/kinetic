@@ -457,7 +457,7 @@ export default function WorkoutBuilder() {
       {activePlan && (
         <>
           {/* Plan meta */}
-          <View style={s.planActions}>
+          <View style={[s.planActions, isMobile && s.planActionsMobile]}>
             <TouchableOpacity
               style={s.renamePlanRow}
               onPress={() => { setRenamingPlanId(activePlan.id); setRenameText(activePlan.name); }}
@@ -759,6 +759,7 @@ const s = StyleSheet.create({
   noPlansText:    { color: colors.onSurfaceVariant, fontSize: fs(13), paddingVertical: 8 },
 
   planActions:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingVertical: 10 },
+  planActionsMobile: { flexDirection: 'column', alignItems: 'flex-start', gap: 6 },
   renamePlanRow:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
   planActionsLabel:  { fontSize: fs(11), color: colors.onSurfaceVariant },
   renameBadge:     { backgroundColor: colors.primaryContainer + '22', borderRadius: 50, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1, borderColor: colors.primaryContainer + '44' },
