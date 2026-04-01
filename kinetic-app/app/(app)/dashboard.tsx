@@ -300,9 +300,9 @@ export default function Dashboard() {
 
       {/* Greeting */}
       <View style={styles.greetingRow}>
-        <View>
+        <View style={{ flex: 1, minWidth: 0, marginRight: 12 }}>
           <Text style={styles.greetingLabel}>{greeting()}</Text>
-          <Text style={styles.greetingName}>{firstName}</Text>
+          <Text style={styles.greetingName} numberOfLines={1} adjustsFontSizeToFit>{firstName}</Text>
         </View>
         {profile.goal && (
           <View style={styles.goalBadge}>

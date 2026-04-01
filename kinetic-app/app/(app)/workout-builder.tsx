@@ -468,7 +468,7 @@ export default function WorkoutBuilder() {
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => deletePlan(activePlan.id)} style={s.deletePlanBtn}>
-              <Text style={s.deletePlanBtnText}>DELETE PLAN</Text>
+              <Text style={s.deletePlanBtnText}>{isMobile ? 'DEL' : 'DELETE PLAN'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -748,7 +748,7 @@ const s = StyleSheet.create({
   },
   applyingText: { color: colors.primaryContainer, fontWeight: '900', fontSize: fs(12), letterSpacing: 2 },
 
-  planTabsScroll: { flexGrow: 0 },
+  planTabsScroll: { flexGrow: 0, overflow: 'hidden' },
   planTabs:       { paddingHorizontal: 22, gap: 8, paddingBottom: 4 },
   planTab:        { paddingHorizontal: 18, paddingVertical: 12, borderRadius: 12, backgroundColor: colors.surfaceContainer, gap: 2 },
   planTabActive:  { backgroundColor: colors.primaryContainer },
@@ -758,7 +758,7 @@ const s = StyleSheet.create({
   planTabGoalActive: { color: colors.onPrimaryContainer + 'aa' },
   noPlansText:    { color: colors.onSurfaceVariant, fontSize: fs(13), paddingVertical: 8 },
 
-  planActions:       { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', paddingHorizontal: 22, paddingVertical: 10, gap: 8 },
+  planActions:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingVertical: 10 },
   renamePlanRow:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
   planActionsLabel:  { fontSize: fs(11), color: colors.onSurfaceVariant },
   renameBadge:     { backgroundColor: colors.primaryContainer + '22', borderRadius: 50, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1, borderColor: colors.primaryContainer + '44' },
